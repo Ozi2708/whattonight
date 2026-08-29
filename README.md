@@ -42,6 +42,37 @@ exact, donc aucun risque de tomber sur un remake ou un homonyme.
 
 Pour modifier la sélection, éditer `movies.seed.mjs` puis relancer le script.
 
+## Application installable (PWA)
+
+L'app s'installe depuis le navigateur, sans passer par un store.
+
+- **Android / Chrome** : un bouton « Installer » apparaît dans l'onglet Profil
+  dès que le navigateur juge l'app installable.
+- **iOS / Safari** : aucune API d'installation n'existe, l'onglet Profil affiche
+  donc la marche à suivre (Partager → Sur l'écran d'accueil).
+
+Une fois installée, elle s'ouvre en plein écran, en portrait, et fonctionne
+**hors connexion** : le shell est pré-caché, les affiches sont mises en cache au
+fur et à mesure qu'elles sont vues.
+
+L'installabilité exige du HTTPS — donc un build déployé (Vercel), pas
+`localhost` en HTTP. Le service worker n'est généré qu'au build : en `npm run
+dev` il n'y a ni manifest ni cache, ce qui est voulu.
+
+Les icônes sont générées, jamais dessinées à la main :
+
+```bash
+npm run icons     # public/icon-192, icon-512, icon-maskable-512, apple-touch-icon, favicon
+```
+
+## Navigation
+
+Onglets et panneaux sont adossés à l'historique du navigateur
+(`src/core/navigation.ts`). Le retour Android — bouton comme swipe depuis le
+bord, qui déclenchent le même `popstate` — referme le panneau ouvert, puis
+revient à l'onglet précédent, et ne quitte l'app qu'une fois la pile vidée.
+Aucun geste n'est intercepté : c'est le comportement système qui est respecté.
+
 ## Structure
 
 ```

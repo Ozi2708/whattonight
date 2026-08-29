@@ -5,25 +5,38 @@ import { CatalogScreen } from './components/CatalogScreen'
 import { ProfileScreen } from './components/ProfileScreen'
 import { FilterSheet } from './components/FilterSheet'
 import { MovieSheet } from './components/MovieSheet'
-import { MOVIES, type Movie } from './movies/catalog'
+import { MOVIES, MOVIES_BY_ID, type Movie } from './movies/catalog'
 import { applyFilters, NO_FILTERS, type Filters } from './movies/filters'
 import { useLibrary, library } from './core/library'
+import { useNavigation } from './core/navigation'
 import { MOVIES_CATEGORY } from './core/categories'
 
 const CATEGORY = MOVIES_CATEGORY.id
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>('roulette')
-  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
-  const [filtersOpen, setFiltersOpen] = useState(false)
-  const [details, setDetails] = useState<Movie | null>(null)
+  // Onglet et panneaux vivent dans l'historique : le retour Android (bouton ou
+  // swipe) referme un panneau ou revient à l'onglet précédent.
+  const { state, push, replace, back } = useNavigation<Tab>({
+    tab: 'roulette',
+    sheet: null,
+    detailsId: null,
+  })
 
-  // Résultat courant de la roulette et choix validé pour la soirée : remontés
-  // ici pour survivre aux changements d'onglet.
+  const [filters, setFilters] = useState<Filters>(NO_FILTERS)
+
+  // Résultat courant de la roulette et choix validé pour la soirée : gardés ici
+  // pour survivre aux changements d'onglet.
   const [result, setResult] = useState<Movie | null>(null)
   const [tonight, setTonight] = useState<Movie | null>(null)
 
   const { seenSet, favoriteSet, history, lastPicked } = useLibrary(CATEGORY)
+
+  const details = state.detailsId ? (MOVIES_BY_ID.get(state.detailsId) ?? null) : null
+  const showDetails = state.sheet === 'details' && details !== null
+
+  const goToTab = (tab: Tab) => push({ tab, sheet: null, detailsId: null })
+  const openFilters = () => push({ ...state, sheet: 'filters' })
+  const openDetails = (movie: Movie) => push({ ...state, sheet: 'details', detailsId: movie.id })
 
   const choose = (movie: Movie | null) => {
     setTonight(movie)
@@ -34,17 +47,18 @@ export default function App() {
   const playFromSheet = (movie: Movie) => {
     setResult(movie)
     choose(movie)
-    setDetails(null)
-    setTab('roulette')
+    // `replace` plutôt que `push` : la fiche se referme en même temps qu'on
+    // change d'onglet, un retour ne doit pas la rouvrir.
+    replace({ tab: 'roulette', sheet: null, detailsId: null })
   }
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col pb-[76px]">
       <main className="flex flex-1 flex-col">
-        {tab === 'roulette' && (
+        {state.tab === 'roulette' && (
           <RouletteScreen
             filters={filters}
-            onOpenFilters={() => setFiltersOpen(true)}
+            onOpenFilters={openFilters}
             onToggleUnseen={() => setFilters((f) => ({ ...f, unseenOnly: !f.unseenOnly }))}
             seen={seenSet}
             favorites={favoriteSet}
@@ -53,37 +67,37 @@ export default function App() {
             onResult={setResult}
             tonight={tonight}
             onChoose={choose}
-            onOpenDetails={setDetails}
+            onOpenDetails={openDetails}
           />
         )}
 
-        {tab === 'catalog' && (
-          <CatalogScreen seen={seenSet} favorites={favoriteSet} onOpen={setDetails} />
+        {state.tab === 'catalog' && (
+          <CatalogScreen seen={seenSet} favorites={favoriteSet} onOpen={openDetails} />
         )}
 
-        {tab === 'profile' && (
+        {state.tab === 'profile' && (
           <ProfileScreen
             seen={seenSet}
             favorites={favoriteSet}
             lastPicked={lastPicked}
-            onOpen={setDetails}
+            onOpen={openDetails}
           />
         )}
       </main>
 
-      <TabBar tab={tab} onChange={setTab} />
+      <TabBar tab={state.tab} onChange={goToTab} />
 
       <FilterSheet
-        open={filtersOpen}
-        onClose={() => setFiltersOpen(false)}
+        open={state.sheet === 'filters'}
+        onClose={back}
         filters={filters}
         onChange={setFilters}
         matches={applyFilters(MOVIES, filters, seenSet).length}
       />
 
       <MovieSheet
-        movie={details}
-        onClose={() => setDetails(null)}
+        movie={showDetails ? details : null}
+        onClose={back}
         seen={details ? seenSet.has(details.id) : false}
         favorite={details ? favoriteSet.has(details.id) : false}
         onToggleSeen={() => details && library.toggleSeen(CATEGORY, details.id)}
