@@ -1,8 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
   <rect width="64" height="64" fill="#07070b"/>
-  <g transform="translate(7.039999999999999 14.0288) scale(0.49920000000000003)" fill="none" stroke="#ffc94a"
-     stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="4" y="4" width="92" height="64" rx="16"/>
-    <path d="M34.7 4v64M65.3 4v64"/>
+  <defs><clipPath id="lens6478"><circle cx="35" cy="31" r="26"/></clipPath></defs>
+  <g transform="translate(7.039999999999999 16.5248) scale(0.49920000000000003)">
+    <g clip-path="url(#lens6478)"><circle cx="65" cy="31" r="26" fill="#ffc94a"/></g>
+    <g fill="none" stroke="#ffc94a" stroke-width="6">
+      <circle cx="35" cy="31" r="26"/>
+      <circle cx="65" cy="31" r="26"/>
+    </g>
   </g>
 </svg>

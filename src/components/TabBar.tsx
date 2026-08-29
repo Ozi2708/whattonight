@@ -1,9 +1,10 @@
-import { IconGrid, IconSlot, IconUser } from './icons'
+import { IconGrid, IconSlot, IconUser, IconVenn } from './icons'
 
-export type Tab = 'roulette' | 'catalog' | 'profile'
+export type Tab = 'duo' | 'roulette' | 'catalog' | 'profile'
 
 const TABS: { id: Tab; label: string; Icon: (p: { className?: string }) => React.ReactElement }[] = [
-  { id: 'roulette', label: 'Roulette', Icon: IconSlot },
+  { id: 'duo', label: 'Duo', Icon: IconVenn },
+  { id: 'roulette', label: 'Solo', Icon: IconSlot },
   { id: 'catalog', label: 'Les 100', Icon: IconGrid },
   { id: 'profile', label: 'Profil', Icon: IconUser },
 ]

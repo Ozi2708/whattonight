@@ -18,10 +18,11 @@ import { writeFile, mkdir, readFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { MOVIES } from './movies.seed.mjs'
+import { MOODS } from './movies.moods.mjs'
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = resolve(ROOT, 'src/data/movies.json')
-const UA = 'WhatTonight/0.1 (personal project; contact via app repo)'
+const UA = 'Venn/0.2 (personal project; contact via app repo)'
 
 const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=')[1]
 
@@ -364,6 +365,8 @@ async function main() {
       year: entry.seed.year,
       ...data,
       genres: [...new Set(data.genres ?? entry.seed.genres)].slice(0, 3),
+      // Annotation éditoriale : aucune source externe ne la fournit.
+      moods: MOODS[entry.seed.wiki] ?? [],
     }
   })
   process.stdout.write('\n')

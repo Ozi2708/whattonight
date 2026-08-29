@@ -37,7 +37,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/8/81/ShawshankRedemptionMoviePoster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/8/81/ShawshankRedemptionMoviePoster.jpg",
       "backdrop": null,
-      "tmdbId": 278
+      "tmdbId": 278,
+      "moods": [
+        "emotion",
+        "intelligent"
+      ]
     },
     {
       "id": "pulp-fiction",
@@ -55,7 +59,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/3/3b/Pulp_Fiction_%281994%29_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/3/3b/Pulp_Fiction_%281994%29_poster.jpg",
       "backdrop": null,
-      "tmdbId": 680
+      "tmdbId": 680,
+      "moods": [
+        "surprenant",
+        "intelligent",
+        "drole"
+      ]
     },
     {
       "id": "schindler-s-list",
@@ -74,7 +83,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/3/38/Schindler%27s_List_movie.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/3/38/Schindler%27s_List_movie.jpg",
       "backdrop": null,
-      "tmdbId": 424
+      "tmdbId": 424,
+      "moods": [
+        "emotion",
+        "intense"
+      ]
     },
     {
       "id": "goodfellas",
@@ -92,7 +105,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/7/7b/Goodfellas.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/7/7b/Goodfellas.jpg",
       "backdrop": null,
-      "tmdbId": 769
+      "tmdbId": 769,
+      "moods": [
+        "intense",
+        "intelligent"
+      ]
     },
     {
       "id": "the-silence-of-the-lambs",
@@ -111,7 +128,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/8/86/The_Silence_of_the_Lambs_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/8/86/The_Silence_of_the_Lambs_poster.jpg",
       "backdrop": null,
-      "tmdbId": 274
+      "tmdbId": 274,
+      "moods": [
+        "stressant",
+        "intense",
+        "intelligent"
+      ]
     },
     {
       "id": "the-matrix",
@@ -129,7 +151,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/d/db/The_Matrix.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/d/db/The_Matrix.png",
       "backdrop": null,
-      "tmdbId": 603
+      "tmdbId": 603,
+      "moods": [
+        "spectaculaire",
+        "mindfuck",
+        "intense"
+      ]
     },
     {
       "id": "fight-club",
@@ -147,7 +174,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/f/fc/Fight_Club_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/f/fc/Fight_Club_poster.jpg",
       "backdrop": null,
-      "tmdbId": 550
+      "tmdbId": 550,
+      "moods": [
+        "mindfuck",
+        "intense",
+        "intelligent"
+      ]
     },
     {
       "id": "seven",
@@ -166,7 +198,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/6/68/Seven_%28movie%29_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/6/68/Seven_%28movie%29_poster.jpg",
       "backdrop": null,
-      "tmdbId": 807
+      "tmdbId": 807,
+      "moods": [
+        "stressant",
+        "intense"
+      ]
     },
     {
       "id": "jurassic-park",
@@ -184,7 +220,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/e/e7/Jurassic_Park_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/e/e7/Jurassic_Park_poster.jpg",
       "backdrop": null,
-      "tmdbId": 329
+      "tmdbId": 329,
+      "moods": [
+        "spectaculaire",
+        "intense",
+        "facile"
+      ]
     },
     {
       "id": "terminator-2-judgment-day",
@@ -202,7 +243,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/5/5e/Terminator_2-Judgment_Day.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/5/5e/Terminator_2-Judgment_Day.png",
       "backdrop": null,
-      "tmdbId": 280
+      "tmdbId": 280,
+      "moods": [
+        "spectaculaire",
+        "intense"
+      ]
     },
     {
       "id": "forrest-gump",
@@ -220,7 +265,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/6/67/Forrest_Gump_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/6/67/Forrest_Gump_poster.jpg",
       "backdrop": null,
-      "tmdbId": 13
+      "tmdbId": 13,
+      "moods": [
+        "emotion",
+        "facile"
+      ]
     },
     {
       "id": "saving-private-ryan",
@@ -239,7 +288,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/a/ac/Saving_Private_Ryan_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/a/ac/Saving_Private_Ryan_poster.jpg",
       "backdrop": null,
-      "tmdbId": 857
+      "tmdbId": 857,
+      "moods": [
+        "intense",
+        "emotion",
+        "spectaculaire"
+      ]
     },
     {
       "id": "heat",
@@ -258,7 +312,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/6/6c/Heatposter.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/6/6c/Heatposter.jpg",
       "backdrop": null,
-      "tmdbId": 949
+      "tmdbId": 949,
+      "moods": [
+        "intense",
+        "intelligent"
+      ]
     },
     {
       "id": "the-truman-show",
@@ -277,7 +335,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/c/cd/Trumanshow.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/c/cd/Trumanshow.jpg",
       "backdrop": null,
-      "tmdbId": 37165
+      "tmdbId": 37165,
+      "moods": [
+        "intelligent",
+        "emotion",
+        "surprenant"
+      ]
     },
     {
       "id": "the-lion-king",
@@ -296,7 +359,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/3/3d/The_Lion_King_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/3/3d/The_Lion_King_poster.jpg",
       "backdrop": null,
-      "tmdbId": 8587
+      "tmdbId": 8587,
+      "moods": [
+        "emotion",
+        "facile"
+      ]
     },
     {
       "id": "toy-story",
@@ -315,7 +382,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/1/13/Toy_Story.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/1/13/Toy_Story.jpg",
       "backdrop": null,
-      "tmdbId": 862
+      "tmdbId": 862,
+      "moods": [
+        "facile",
+        "drole",
+        "emotion"
+      ]
     },
     {
       "id": "la-haine",
@@ -333,7 +405,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/0/01/La_Haine_%281995_movie_poster%29.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/0/01/La_Haine_%281995_movie_poster%29.jpg",
       "backdrop": null,
-      "tmdbId": 406
+      "tmdbId": 406,
+      "moods": [
+        "intense",
+        "intelligent"
+      ]
     },
     {
       "id": "fargo",
@@ -352,7 +428,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/3/33/Fargo_%281996_movie_poster%29.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/3/33/Fargo_%281996_movie_poster%29.jpg",
       "backdrop": null,
-      "tmdbId": 275
+      "tmdbId": 275,
+      "moods": [
+        "drole",
+        "surprenant",
+        "intelligent"
+      ]
     },
     {
       "id": "titanic",
@@ -370,7 +451,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/1/18/Titanic_%281997_film%29_poster.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/1/18/Titanic_%281997_film%29_poster.png",
       "backdrop": null,
-      "tmdbId": 597
+      "tmdbId": 597,
+      "moods": [
+        "emotion",
+        "spectaculaire"
+      ]
     },
     {
       "id": "princess-mononoke",
@@ -389,7 +474,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/8/8c/Princess_Mononoke_Japanese_poster.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/8/8c/Princess_Mononoke_Japanese_poster.png",
       "backdrop": null,
-      "tmdbId": 128
+      "tmdbId": 128,
+      "moods": [
+        "spectaculaire",
+        "emotion",
+        "intelligent"
+      ]
     },
     {
       "id": "life-is-beautiful",
@@ -408,7 +498,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/7/7c/Vitaebella.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/7/7c/Vitaebella.jpg",
       "backdrop": null,
-      "tmdbId": 637
+      "tmdbId": 637,
+      "moods": [
+        "emotion",
+        "drole"
+      ]
     },
     {
       "id": "reservoir-dogs",
@@ -426,7 +520,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/0/01/Reservoir_Dogs.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/0/01/Reservoir_Dogs.png",
       "backdrop": null,
-      "tmdbId": 500
+      "tmdbId": 500,
+      "moods": [
+        "intense",
+        "stressant"
+      ]
     },
     {
       "id": "unforgiven",
@@ -444,7 +542,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/4/4e/Unforgiven_2.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/4/4e/Unforgiven_2.jpg",
       "backdrop": null,
-      "tmdbId": 33
+      "tmdbId": 33,
+      "moods": [
+        "intense",
+        "intelligent"
+      ]
     },
     {
       "id": "groundhog-day",
@@ -463,7 +565,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/b/b1/Groundhog_Day_%28movie_poster%29.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/b/b1/Groundhog_Day_%28movie_poster%29.jpg",
       "backdrop": null,
-      "tmdbId": 137
+      "tmdbId": 137,
+      "moods": [
+        "drole",
+        "facile",
+        "intelligent"
+      ]
     },
     {
       "id": "trainspotting",
@@ -481,7 +588,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/7/71/Trainspotting_ver2.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/7/71/Trainspotting_ver2.jpg",
       "backdrop": null,
-      "tmdbId": 627
+      "tmdbId": 627,
+      "moods": [
+        "intense",
+        "surprenant",
+        "drole"
+      ]
     },
     {
       "id": "gladiator",
@@ -500,7 +612,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/f/fb/Gladiator_%282000_film_poster%29.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/f/fb/Gladiator_%282000_film_poster%29.png",
       "backdrop": null,
-      "tmdbId": 98
+      "tmdbId": 98,
+      "moods": [
+        "spectaculaire",
+        "intense",
+        "emotion"
+      ]
     },
     {
       "id": "memento",
@@ -518,7 +635,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/c/c7/Memento_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/c/c7/Memento_poster.jpg",
       "backdrop": null,
-      "tmdbId": 77
+      "tmdbId": 77,
+      "moods": [
+        "mindfuck",
+        "intelligent"
+      ]
     },
     {
       "id": "requiem-for-a-dream",
@@ -535,7 +656,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/9/92/Requiem_for_a_dream.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/9/92/Requiem_for_a_dream.jpg",
       "backdrop": null,
-      "tmdbId": 641
+      "tmdbId": 641,
+      "moods": [
+        "intense",
+        "stressant",
+        "emotion"
+      ]
     },
     {
       "id": "crouching-tiger-hidden-dragon",
@@ -554,7 +680,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/2/27/Crouching_Tiger%2C_Hidden_Dragon_%28Chinese_poster%29.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/2/27/Crouching_Tiger%2C_Hidden_Dragon_%28Chinese_poster%29.png",
       "backdrop": null,
-      "tmdbId": 146
+      "tmdbId": 146,
+      "moods": [
+        "spectaculaire",
+        "emotion"
+      ]
     },
     {
       "id": "the-lord-of-the-rings-the-fellowship-of-the-ring",
@@ -573,7 +703,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/f/fb/Lord_Rings_Fellowship_Ring.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/f/fb/Lord_Rings_Fellowship_Ring.jpg",
       "backdrop": null,
-      "tmdbId": 120
+      "tmdbId": 120,
+      "moods": [
+        "spectaculaire",
+        "emotion"
+      ]
     },
     {
       "id": "spirited-away",
@@ -592,7 +726,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/d/db/Spirited_Away_Japanese_poster.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/d/db/Spirited_Away_Japanese_poster.png",
       "backdrop": null,
-      "tmdbId": 129
+      "tmdbId": 129,
+      "moods": [
+        "surprenant",
+        "emotion",
+        "chill"
+      ]
     },
     {
       "id": "mulholland-drive",
@@ -611,7 +750,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/0/0f/Mulholland.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/0/0f/Mulholland.png",
       "backdrop": null,
-      "tmdbId": 1018
+      "tmdbId": 1018,
+      "moods": [
+        "mindfuck",
+        "stressant"
+      ]
     },
     {
       "id": "amelie",
@@ -629,7 +772,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/5/53/Amelie_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/5/53/Amelie_poster.jpg",
       "backdrop": null,
-      "tmdbId": 194
+      "tmdbId": 194,
+      "moods": [
+        "facile",
+        "chill",
+        "emotion"
+      ]
     },
     {
       "id": "the-lord-of-the-rings-the-two-towers",
@@ -648,7 +796,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/a/a1/Lord_Rings_Two_Towers.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/a/a1/Lord_Rings_Two_Towers.jpg",
       "backdrop": null,
-      "tmdbId": 121
+      "tmdbId": 121,
+      "moods": [
+        "spectaculaire",
+        "intense"
+      ]
     },
     {
       "id": "city-of-god",
@@ -666,7 +818,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/1/10/CidadedeDeus.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/1/10/CidadedeDeus.jpg",
       "backdrop": null,
-      "tmdbId": 598
+      "tmdbId": 598,
+      "moods": [
+        "intense",
+        "stressant"
+      ]
     },
     {
       "id": "the-pianist",
@@ -685,7 +841,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/a/a6/The_Pianist_movie.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/a/a6/The_Pianist_movie.jpg",
       "backdrop": null,
-      "tmdbId": 423
+      "tmdbId": 423,
+      "moods": [
+        "emotion",
+        "intense"
+      ]
     },
     {
       "id": "the-lord-of-the-rings-the-return-of-the-king",
@@ -704,7 +864,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/4/48/Lord_Rings_Return_King.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/4/48/Lord_Rings_Return_King.jpg",
       "backdrop": null,
-      "tmdbId": 122
+      "tmdbId": 122,
+      "moods": [
+        "spectaculaire",
+        "emotion"
+      ]
     },
     {
       "id": "oldboy",
@@ -723,7 +887,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/6/67/Oldboykoreanposter.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/6/67/Oldboykoreanposter.jpg",
       "backdrop": null,
-      "tmdbId": 670
+      "tmdbId": 670,
+      "moods": [
+        "mindfuck",
+        "intense",
+        "stressant"
+      ]
     },
     {
       "id": "kill-bill-volume-1",
@@ -742,7 +911,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/2/2c/Kill_Bill_Volume_1.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/2/2c/Kill_Bill_Volume_1.png",
       "backdrop": null,
-      "tmdbId": 24
+      "tmdbId": 24,
+      "moods": [
+        "spectaculaire",
+        "intense",
+        "surprenant"
+      ]
     },
     {
       "id": "eternal-sunshine-of-the-spotless-mind",
@@ -761,7 +935,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/a/a4/Eternal_Sunshine_of_the_Spotless_Mind.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/a/a4/Eternal_Sunshine_of_the_Spotless_Mind.png",
       "backdrop": null,
-      "tmdbId": 38
+      "tmdbId": 38,
+      "moods": [
+        "emotion",
+        "mindfuck",
+        "intelligent"
+      ]
     },
     {
       "id": "the-incredibles",
@@ -780,7 +959,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/2/27/The_Incredibles_%282004_animated_feature_film%29.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/2/27/The_Incredibles_%282004_animated_feature_film%29.jpg",
       "backdrop": null,
-      "tmdbId": 9806
+      "tmdbId": 9806,
+      "moods": [
+        "drole",
+        "spectaculaire",
+        "facile"
+      ]
     },
     {
       "id": "brokeback-mountain",
@@ -798,7 +982,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/a/a1/Brokeback_mountain.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/a/a1/Brokeback_mountain.jpg",
       "backdrop": null,
-      "tmdbId": 142
+      "tmdbId": 142,
+      "moods": [
+        "emotion",
+        "chill"
+      ]
     },
     {
       "id": "pan-s-labyrinth",
@@ -817,7 +1005,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/6/67/Pan%27s_Labyrinth.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/6/67/Pan%27s_Labyrinth.jpg",
       "backdrop": null,
-      "tmdbId": 1417
+      "tmdbId": 1417,
+      "moods": [
+        "emotion",
+        "stressant",
+        "surprenant"
+      ]
     },
     {
       "id": "the-departed",
@@ -836,7 +1029,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/5/50/Departed234.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/5/50/Departed234.jpg",
       "backdrop": null,
-      "tmdbId": 1422
+      "tmdbId": 1422,
+      "moods": [
+        "intense",
+        "stressant"
+      ]
     },
     {
       "id": "children-of-men",
@@ -855,7 +1052,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/f/fc/Children_of_men_ver4.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/f/fc/Children_of_men_ver4.jpg",
       "backdrop": null,
-      "tmdbId": 9693
+      "tmdbId": 9693,
+      "moods": [
+        "intense",
+        "stressant",
+        "intelligent"
+      ]
     },
     {
       "id": "the-prestige",
@@ -874,7 +1076,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/d/d2/Prestige_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/d/d2/Prestige_poster.jpg",
       "backdrop": null,
-      "tmdbId": 1124
+      "tmdbId": 1124,
+      "moods": [
+        "mindfuck",
+        "intelligent",
+        "surprenant"
+      ]
     },
     {
       "id": "no-country-for-old-men",
@@ -893,7 +1100,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/8/8b/No_Country_for_Old_Men_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/8/8b/No_Country_for_Old_Men_poster.jpg",
       "backdrop": null,
-      "tmdbId": 6977
+      "tmdbId": 6977,
+      "moods": [
+        "stressant",
+        "intense",
+        "intelligent"
+      ]
     },
     {
       "id": "there-will-be-blood",
@@ -911,7 +1123,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/d/da/There_Will_Be_Blood_Poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/d/da/There_Will_Be_Blood_Poster.jpg",
       "backdrop": null,
-      "tmdbId": 7345
+      "tmdbId": 7345,
+      "moods": [
+        "intense",
+        "intelligent"
+      ]
     },
     {
       "id": "the-dark-knight",
@@ -930,7 +1146,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/1/1c/The_Dark_Knight_%282008_film%29.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/1/1c/The_Dark_Knight_%282008_film%29.jpg",
       "backdrop": null,
-      "tmdbId": 155
+      "tmdbId": 155,
+      "moods": [
+        "spectaculaire",
+        "intense"
+      ]
     },
     {
       "id": "inglourious-basterds",
@@ -949,7 +1169,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/c/c3/Inglourious_Basterds_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/c/c3/Inglourious_Basterds_poster.jpg",
       "backdrop": null,
-      "tmdbId": 16869
+      "tmdbId": 16869,
+      "moods": [
+        "intense",
+        "drole",
+        "surprenant"
+      ]
     },
     {
       "id": "inception",
@@ -968,7 +1193,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/2/2e/Inception_%282010%29_theatrical_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/2/2e/Inception_%282010%29_theatrical_poster.jpg",
       "backdrop": null,
-      "tmdbId": 27205
+      "tmdbId": 27205,
+      "moods": [
+        "mindfuck",
+        "spectaculaire",
+        "intelligent"
+      ]
     },
     {
       "id": "the-social-network",
@@ -985,7 +1215,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/8/8c/The_Social_Network_film_poster.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/8/8c/The_Social_Network_film_poster.png",
       "backdrop": null,
-      "tmdbId": 37799
+      "tmdbId": 37799,
+      "moods": [
+        "intelligent",
+        "intense"
+      ]
     },
     {
       "id": "black-swan",
@@ -1003,7 +1237,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/6/68/Black_Swan_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/6/68/Black_Swan_poster.jpg",
       "backdrop": null,
-      "tmdbId": 44214
+      "tmdbId": 44214,
+      "moods": [
+        "stressant",
+        "intense",
+        "mindfuck"
+      ]
     },
     {
       "id": "drive",
@@ -1022,7 +1261,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/1/13/Drive2011Poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/1/13/Drive2011Poster.jpg",
       "backdrop": null,
-      "tmdbId": 64690
+      "tmdbId": 64690,
+      "moods": [
+        "intense",
+        "chill",
+        "stressant"
+      ]
     },
     {
       "id": "the-intouchables",
@@ -1040,7 +1284,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/9/93/The_Intouchables.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/9/93/The_Intouchables.jpg",
       "backdrop": null,
-      "tmdbId": 77338
+      "tmdbId": 77338,
+      "moods": [
+        "drole",
+        "emotion",
+        "facile"
+      ]
     },
     {
       "id": "a-separation",
@@ -1057,7 +1306,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/4/41/A_Separation_%282011_film_poster%29.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/4/41/A_Separation_%282011_film_poster%29.png",
       "backdrop": null,
-      "tmdbId": 60243
+      "tmdbId": 60243,
+      "moods": [
+        "intense",
+        "intelligent",
+        "emotion"
+      ]
     },
     {
       "id": "django-unchained",
@@ -1075,7 +1329,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/8/8b/Django_Unchained_Poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/8/8b/Django_Unchained_Poster.jpg",
       "backdrop": null,
-      "tmdbId": 68718
+      "tmdbId": 68718,
+      "moods": [
+        "intense",
+        "drole",
+        "spectaculaire"
+      ]
     },
     {
       "id": "the-hunt",
@@ -1092,7 +1351,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/4/44/The_Hunt_%282012_film%29.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/4/44/The_Hunt_%282012_film%29.jpg",
       "backdrop": null,
-      "tmdbId": 103663
+      "tmdbId": 103663,
+      "moods": [
+        "stressant",
+        "intense",
+        "emotion"
+      ]
     },
     {
       "id": "her",
@@ -1111,7 +1375,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/4/44/Her2013Poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/4/44/Her2013Poster.jpg",
       "backdrop": null,
-      "tmdbId": 152601
+      "tmdbId": 152601,
+      "moods": [
+        "emotion",
+        "chill",
+        "intelligent"
+      ]
     },
     {
       "id": "prisoners",
@@ -1130,7 +1399,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/6/63/Prisoners2013Poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/6/63/Prisoners2013Poster.jpg",
       "backdrop": null,
-      "tmdbId": 146233
+      "tmdbId": 146233,
+      "moods": [
+        "stressant",
+        "intense"
+      ]
     },
     {
       "id": "the-wolf-of-wall-street",
@@ -1149,7 +1422,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/d/d8/The_Wolf_of_Wall_Street_%282013%29.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/d/d8/The_Wolf_of_Wall_Street_%282013%29.png",
       "backdrop": null,
-      "tmdbId": 106646
+      "tmdbId": 106646,
+      "moods": [
+        "drole",
+        "intense",
+        "spectaculaire"
+      ]
     },
     {
       "id": "12-years-a-slave",
@@ -1167,7 +1445,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/5/5c/12_Years_a_Slave_film_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/5/5c/12_Years_a_Slave_film_poster.jpg",
       "backdrop": null,
-      "tmdbId": 76203
+      "tmdbId": 76203,
+      "moods": [
+        "emotion",
+        "intense"
+      ]
     },
     {
       "id": "interstellar",
@@ -1186,7 +1468,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/b/bc/Interstellar_film_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/b/bc/Interstellar_film_poster.jpg",
       "backdrop": null,
-      "tmdbId": 157336
+      "tmdbId": 157336,
+      "moods": [
+        "spectaculaire",
+        "emotion",
+        "mindfuck"
+      ]
     },
     {
       "id": "whiplash",
@@ -1204,7 +1491,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/0/01/Whiplash_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/0/01/Whiplash_poster.jpg",
       "backdrop": null,
-      "tmdbId": 244786
+      "tmdbId": 244786,
+      "moods": [
+        "intense",
+        "stressant"
+      ]
     },
     {
       "id": "gone-girl",
@@ -1223,7 +1514,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/0/05/Gone_Girl_Poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/0/05/Gone_Girl_Poster.jpg",
       "backdrop": null,
-      "tmdbId": 210577
+      "tmdbId": 210577,
+      "moods": [
+        "surprenant",
+        "stressant",
+        "intelligent"
+      ]
     },
     {
       "id": "the-grand-budapest-hotel",
@@ -1241,7 +1537,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/1/1c/The_Grand_Budapest_Hotel.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/1/1c/The_Grand_Budapest_Hotel.png",
       "backdrop": null,
-      "tmdbId": 120467
+      "tmdbId": 120467,
+      "moods": [
+        "drole",
+        "facile",
+        "chill"
+      ]
     },
     {
       "id": "mad-max-fury-road",
@@ -1260,7 +1561,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/6/6e/Mad_Max_Fury_Road.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/6/6e/Mad_Max_Fury_Road.jpg",
       "backdrop": null,
-      "tmdbId": 76341
+      "tmdbId": 76341,
+      "moods": [
+        "spectaculaire",
+        "intense"
+      ]
     },
     {
       "id": "inside-out",
@@ -1279,7 +1584,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/0/0a/Inside_Out_%282015_film%29_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/0/0a/Inside_Out_%282015_film%29_poster.jpg",
       "backdrop": null,
-      "tmdbId": 150540
+      "tmdbId": 150540,
+      "moods": [
+        "emotion",
+        "drole",
+        "facile"
+      ]
     },
     {
       "id": "spotlight",
@@ -1297,7 +1607,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/f/f3/Spotlight_%28film%29_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/f/f3/Spotlight_%28film%29_poster.jpg",
       "backdrop": null,
-      "tmdbId": 314365
+      "tmdbId": 314365,
+      "moods": [
+        "intelligent",
+        "intense"
+      ]
     },
     {
       "id": "arrival",
@@ -1316,7 +1630,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/d/df/Arrival%2C_Movie_Poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/d/df/Arrival%2C_Movie_Poster.jpg",
       "backdrop": null,
-      "tmdbId": 329865
+      "tmdbId": 329865,
+      "moods": [
+        "intelligent",
+        "emotion",
+        "mindfuck"
+      ]
     },
     {
       "id": "la-la-land",
@@ -1335,7 +1654,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/a/ab/La_La_Land_%28film%29.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/a/ab/La_La_Land_%28film%29.png",
       "backdrop": null,
-      "tmdbId": 313369
+      "tmdbId": 313369,
+      "moods": [
+        "emotion",
+        "chill",
+        "facile"
+      ]
     },
     {
       "id": "moonlight",
@@ -1352,7 +1676,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/8/84/Moonlight_%282016_film%29.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/8/84/Moonlight_%282016_film%29.png",
       "backdrop": null,
-      "tmdbId": 376867
+      "tmdbId": 376867,
+      "moods": [
+        "emotion",
+        "chill"
+      ]
     },
     {
       "id": "your-name",
@@ -1371,7 +1699,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/0/0b/Your_Name_poster.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/0/0b/Your_Name_poster.png",
       "backdrop": null,
-      "tmdbId": 372058
+      "tmdbId": 372058,
+      "moods": [
+        "emotion",
+        "surprenant",
+        "chill"
+      ]
     },
     {
       "id": "get-out",
@@ -1390,7 +1723,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/a/a3/Get_Out_poster.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/a/a3/Get_Out_poster.png",
       "backdrop": null,
-      "tmdbId": 419430
+      "tmdbId": 419430,
+      "moods": [
+        "stressant",
+        "surprenant",
+        "intelligent"
+      ]
     },
     {
       "id": "blade-runner-2049",
@@ -1409,7 +1747,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/9/9b/Blade_Runner_2049_poster.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/9/9b/Blade_Runner_2049_poster.png",
       "backdrop": null,
-      "tmdbId": 335984
+      "tmdbId": 335984,
+      "moods": [
+        "spectaculaire",
+        "chill",
+        "intelligent"
+      ]
     },
     {
       "id": "coco",
@@ -1428,7 +1771,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/9/98/Coco_%282017_film%29_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/9/98/Coco_%282017_film%29_poster.jpg",
       "backdrop": null,
-      "tmdbId": 354912
+      "tmdbId": 354912,
+      "moods": [
+        "emotion",
+        "facile",
+        "spectaculaire"
+      ]
     },
     {
       "id": "spider-man-into-the-spider-verse",
@@ -1447,7 +1795,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/f/fa/Spider-Man_Into_the_Spider-Verse_poster.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/f/fa/Spider-Man_Into_the_Spider-Verse_poster.png",
       "backdrop": null,
-      "tmdbId": 324857
+      "tmdbId": 324857,
+      "moods": [
+        "spectaculaire",
+        "drole",
+        "emotion"
+      ]
     },
     {
       "id": "parasite",
@@ -1466,7 +1819,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/5/53/Parasite_%282019_film%29.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/5/53/Parasite_%282019_film%29.png",
       "backdrop": null,
-      "tmdbId": 496243
+      "tmdbId": 496243,
+      "moods": [
+        "surprenant",
+        "stressant",
+        "intelligent"
+      ]
     },
     {
       "id": "joker",
@@ -1485,7 +1843,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/e/e1/Joker_%282019_film%29_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/e/e1/Joker_%282019_film%29_poster.jpg",
       "backdrop": null,
-      "tmdbId": 475557
+      "tmdbId": 475557,
+      "moods": [
+        "intense",
+        "stressant"
+      ]
     },
     {
       "id": "1917",
@@ -1504,7 +1866,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/f/fe/1917_%282019%29_Film_Poster.jpeg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/f/fe/1917_%282019%29_Film_Poster.jpeg",
       "backdrop": null,
-      "tmdbId": 530915
+      "tmdbId": 530915,
+      "moods": [
+        "intense",
+        "spectaculaire",
+        "stressant"
+      ]
     },
     {
       "id": "the-father",
@@ -1521,7 +1888,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/a/ab/The_Father_2020_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/a/ab/The_Father_2020_poster.jpg",
       "backdrop": null,
-      "tmdbId": 600354
+      "tmdbId": 600354,
+      "moods": [
+        "emotion",
+        "mindfuck",
+        "stressant"
+      ]
     },
     {
       "id": "another-round",
@@ -1539,7 +1911,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/e/ea/Another_Round_%28film%29.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/e/ea/Another_Round_%28film%29.jpg",
       "backdrop": null,
-      "tmdbId": 580175
+      "tmdbId": 580175,
+      "moods": [
+        "drole",
+        "emotion",
+        "intelligent"
+      ]
     },
     {
       "id": "soul",
@@ -1558,7 +1935,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/3/39/Soul_%282020_film%29_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/3/39/Soul_%282020_film%29_poster.jpg",
       "backdrop": null,
-      "tmdbId": 508442
+      "tmdbId": 508442,
+      "moods": [
+        "emotion",
+        "chill",
+        "intelligent"
+      ]
     },
     {
       "id": "dune",
@@ -1576,7 +1958,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/8/8e/Dune_%282021_film%29.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/8/8e/Dune_%282021_film%29.jpg",
       "backdrop": null,
-      "tmdbId": 438631
+      "tmdbId": 438631,
+      "moods": [
+        "spectaculaire",
+        "chill",
+        "intelligent"
+      ]
     },
     {
       "id": "everything-everywhere-all-at-once",
@@ -1595,7 +1982,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/1/1e/Everything_Everywhere_All_at_Once.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/1/1e/Everything_Everywhere_All_at_Once.jpg",
       "backdrop": null,
-      "tmdbId": 545611
+      "tmdbId": 545611,
+      "moods": [
+        "mindfuck",
+        "drole",
+        "emotion"
+      ]
     },
     {
       "id": "top-gun-maverick",
@@ -1613,7 +2005,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/1/13/Top_Gun_Maverick_Poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/1/13/Top_Gun_Maverick_Poster.jpg",
       "backdrop": null,
-      "tmdbId": 361743
+      "tmdbId": 361743,
+      "moods": [
+        "spectaculaire",
+        "intense",
+        "facile"
+      ]
     },
     {
       "id": "the-batman",
@@ -1632,7 +2029,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/f/ff/The_Batman_%28film%29_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/f/ff/The_Batman_%28film%29_poster.jpg",
       "backdrop": null,
-      "tmdbId": 414906
+      "tmdbId": 414906,
+      "moods": [
+        "intense",
+        "stressant",
+        "spectaculaire"
+      ]
     },
     {
       "id": "aftersun",
@@ -1649,7 +2051,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/1/11/Aftersun.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/1/11/Aftersun.jpg",
       "backdrop": null,
-      "tmdbId": 965150
+      "tmdbId": 965150,
+      "moods": [
+        "emotion",
+        "chill"
+      ]
     },
     {
       "id": "all-quiet-on-the-western-front",
@@ -1668,7 +2074,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/c/c3/All_quiet_on_the_western_front_%282022_film%29.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/c/c3/All_quiet_on_the_western_front_%282022_film%29.jpg",
       "backdrop": null,
-      "tmdbId": 49046
+      "tmdbId": 49046,
+      "moods": [
+        "intense",
+        "stressant",
+        "emotion"
+      ]
     },
     {
       "id": "oppenheimer",
@@ -1686,7 +2097,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/4/4a/Oppenheimer_%28film%29.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/4/4a/Oppenheimer_%28film%29.jpg",
       "backdrop": null,
-      "tmdbId": 872585
+      "tmdbId": 872585,
+      "moods": [
+        "intense",
+        "intelligent"
+      ]
     },
     {
       "id": "past-lives",
@@ -1704,7 +2119,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/d/da/Past_Lives_film_poster.png",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/d/da/Past_Lives_film_poster.png",
       "backdrop": null,
-      "tmdbId": 666277
+      "tmdbId": 666277,
+      "moods": [
+        "emotion",
+        "chill"
+      ]
     },
     {
       "id": "anatomy-of-a-fall",
@@ -1723,7 +2142,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/8/88/Anatomy_of_a_Fall_%282023%29_film_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/8/88/Anatomy_of_a_Fall_%282023%29_film_poster.jpg",
       "backdrop": null,
-      "tmdbId": 915935
+      "tmdbId": 915935,
+      "moods": [
+        "intelligent",
+        "stressant"
+      ]
     },
     {
       "id": "the-holdovers",
@@ -1741,7 +2164,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/6/62/Holdovers_film_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/6/62/Holdovers_film_poster.jpg",
       "backdrop": null,
-      "tmdbId": 840430
+      "tmdbId": 840430,
+      "moods": [
+        "drole",
+        "emotion",
+        "chill"
+      ]
     },
     {
       "id": "spider-man-across-the-spider-verse",
@@ -1760,7 +2188,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/b/b4/Spider-Man-_Across_the_Spider-Verse_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/b/b4/Spider-Man-_Across_the_Spider-Verse_poster.jpg",
       "backdrop": null,
-      "tmdbId": 569094
+      "tmdbId": 569094,
+      "moods": [
+        "spectaculaire",
+        "mindfuck",
+        "emotion"
+      ]
     },
     {
       "id": "dune-part-two",
@@ -1778,7 +2211,11 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/5/52/Dune_Part_Two_poster.jpeg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/5/52/Dune_Part_Two_poster.jpeg",
       "backdrop": null,
-      "tmdbId": 693134
+      "tmdbId": 693134,
+      "moods": [
+        "spectaculaire",
+        "intense"
+      ]
     },
     {
       "id": "anora",
@@ -1797,7 +2234,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/2/2b/Anora_%282024_film%29_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/2/2b/Anora_%282024_film%29_poster.jpg",
       "backdrop": null,
-      "tmdbId": 1064213
+      "tmdbId": 1064213,
+      "moods": [
+        "drole",
+        "intense",
+        "emotion"
+      ]
     },
     {
       "id": "the-substance",
@@ -1816,7 +2258,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/f/ff/The_Substance_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/f/ff/The_Substance_poster.jpg",
       "backdrop": null,
-      "tmdbId": 933260
+      "tmdbId": 933260,
+      "moods": [
+        "stressant",
+        "mindfuck",
+        "surprenant"
+      ]
     },
     {
       "id": "sinners",
@@ -1834,7 +2281,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/5/5f/Sinners_%282025_film%29_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/5/5f/Sinners_%282025_film%29_poster.jpg",
       "backdrop": null,
-      "tmdbId": 1233413
+      "tmdbId": 1233413,
+      "moods": [
+        "stressant",
+        "spectaculaire",
+        "intense"
+      ]
     },
     {
       "id": "one-battle-after-another",
@@ -1853,7 +2305,12 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/5/5d/One_Battle_After_Another.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/5/5d/One_Battle_After_Another.jpg",
       "backdrop": null,
-      "tmdbId": 1054867
+      "tmdbId": 1054867,
+      "moods": [
+        "drole",
+        "intense",
+        "surprenant"
+      ]
     },
     {
       "id": "the-odyssey",
@@ -1872,7 +2329,23 @@
       "poster": "https://upload.wikimedia.org/wikipedia/en/9/90/The_Odyssey_%282026_film%29_poster.jpg",
       "posterSmall": "https://upload.wikimedia.org/wikipedia/en/9/90/The_Odyssey_%282026_film%29_poster.jpg",
       "backdrop": null,
-      "tmdbId": 1368337
+      "tmdbId": 1368337,
+      "moods": [
+        "spectaculaire",
+        "intense"
+      ]
     }
+  ],
+  "moods": [
+    "chill",
+    "drole",
+    "emotion",
+    "facile",
+    "intelligent",
+    "intense",
+    "mindfuck",
+    "spectaculaire",
+    "stressant",
+    "surprenant"
   ]
 }

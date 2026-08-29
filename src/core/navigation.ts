@@ -18,7 +18,7 @@ export interface NavState<Tab extends string> {
 }
 
 /** Marqueur : distingue nos entrées de celles d'un éventuel hôte. */
-const MARK = '__whatTonight'
+const MARK = '__venn'
 
 type Marked<T> = T & { [MARK]: true }
 

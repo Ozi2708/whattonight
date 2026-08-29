@@ -7,7 +7,8 @@ import type { CategoryId, CategoryState } from './types'
  * un abonnement, une écriture différée.
  */
 
-const KEY = 'what-tonight/v1'
+const KEY = 'venn/v1'
+const LEGACY_KEY = 'what-tonight/v1'
 const HISTORY_MAX = 20
 
 type Library = Record<string, CategoryState>
@@ -16,7 +17,9 @@ const emptyCategory = (): CategoryState => ({ seen: [], favorites: [], history: 
 
 function load(): Library {
   try {
-    const raw = localStorage.getItem(KEY)
+    // Reprise silencieuse des données de la V1 : la progression déjà
+    // accumulée ne doit pas disparaître avec le changement de nom.
+    const raw = localStorage.getItem(KEY) ?? localStorage.getItem(LEGACY_KEY)
     if (!raw) return {}
     const parsed = JSON.parse(raw)
     return parsed && typeof parsed === 'object' ? (parsed.categories ?? {}) : {}
@@ -44,7 +47,7 @@ function commit(next: Library) {
   }, 120)
 }
 
-const subscribe = (l: () => void) => {
+export const subscribeLibrary = (l: () => void) => {
   listeners.add(l)
   return () => listeners.delete(l)
 }
@@ -62,7 +65,17 @@ const toggleIn = (list: string[], id: string) =>
 
 /* ------------------------------------------------------------------ actions */
 
+export const readCategory = (category: CategoryId): CategoryState => read(category)
+
 export const library = {
+  /** Fusion avec l'état distant : on garde l'union, jamais de perte. */
+  mergeRemote: (category: CategoryId, seen: string[], favorites: string[]) =>
+    update(category, (c) => ({
+      ...c,
+      seen: [...new Set([...c.seen, ...seen])],
+      favorites: [...new Set([...c.favorites, ...favorites])],
+    })),
+
   toggleSeen: (category: CategoryId, id: string) =>
     update(category, (c) => ({ ...c, seen: toggleIn(c.seen, id) })),
 
@@ -94,7 +107,7 @@ export const library = {
 
 export function useLibrary(category: CategoryId) {
   const raw = useSyncExternalStore(
-    subscribe,
+    subscribeLibrary,
     () => state[category],
     () => undefined,
   )

@@ -20,9 +20,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
       manifest: {
-        name: 'What Tonight?',
-        short_name: 'What Tonight',
-        description: 'On regarde quoi ce soir ? Lance la roulette.',
+        name: 'Venn',
+        short_name: 'Venn',
+        description: 'Trouvez le film qui vous va à tous les deux.',
         lang: 'fr',
         start_url: '/',
         scope: '/',

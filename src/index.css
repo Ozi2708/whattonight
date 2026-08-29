@@ -64,3 +64,24 @@
     radial-gradient(120% 80% at 50% -10%, rgba(255, 201, 74, 0.13), transparent 60%),
     radial-gradient(90% 60% at 15% 100%, rgba(120, 80, 255, 0.1), transparent 65%);
 }
+
+/* Les deux cercles de Venn se rapprochent : le concept, en mouvement. */
+@keyframes venn-breathe {
+  0%,
+  100% {
+    transform: scaleX(1.06);
+  }
+  50% {
+    transform: scaleX(0.94);
+  }
+}
+
+.venn-breathe {
+  animation: venn-breathe 2.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .venn-breathe {
+    animation: none;
+  }
+}

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { TabBar, type Tab } from './components/TabBar'
 import { RouletteScreen } from './components/RouletteScreen'
 import { CatalogScreen } from './components/CatalogScreen'
@@ -10,14 +10,32 @@ import { applyFilters, NO_FILTERS, type Filters } from './movies/filters'
 import { useLibrary, library } from './core/library'
 import { useNavigation } from './core/navigation'
 import { MOVIES_CATEGORY } from './core/categories'
+import { DuoScreen } from './components/DuoScreen'
+import { initAccount, useAccount } from './core/account'
+import { isCloudConfigured } from './core/supabase'
+import { startLibrarySync, stopLibrarySync } from './core/librarySync'
 
 const CATEGORY = MOVIES_CATEGORY.id
 
 export default function App() {
   // Onglet et panneaux vivent dans l'historique : le retour Android (bouton ou
   // swipe) referme un panneau ou revient à l'onglet précédent.
+  const account = useAccount()
+
+  // Session anonyme + reprise de la bibliothèque distante, une seule fois.
+  useEffect(() => {
+    void initAccount()
+  }, [])
+
+  useEffect(() => {
+    if (account.profile) void startLibrarySync(account.profile.id)
+    return stopLibrarySync
+  }, [account.profile?.id])
+
   const { state, push, replace, back } = useNavigation<Tab>({
-    tab: 'roulette',
+    // Le duo est le cœur du produit dès qu'un backend est branché ; sans lui,
+    // Venn démarre sur la roulette solo, qui fonctionne seule.
+    tab: isCloudConfigured ? 'duo' : 'roulette',
     sheet: null,
     detailsId: null,
   })
@@ -55,6 +73,15 @@ export default function App() {
   return (
     <div className="mx-auto flex min-h-dvh max-w-lg flex-col pb-[76px]">
       <main className="flex flex-1 flex-col">
+        {state.tab === 'duo' && (
+          <DuoScreen
+            seen={seenSet}
+            favorites={favoriteSet}
+            history={history}
+            onOpenDetails={openDetails}
+          />
+        )}
+
         {state.tab === 'roulette' && (
           <RouletteScreen
             filters={filters}

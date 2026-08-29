@@ -6,6 +6,7 @@ export interface Movie extends RouletteItem {
   year: number
   runtime: number | null
   genres: string[]
+  moods: string[]
   rating: number | null
   director: string | null
   overview: string | null
@@ -17,6 +18,7 @@ export interface Movie extends RouletteItem {
 interface Catalog {
   source: string
   genres: string[]
+  moods: string[]
   items: Omit<Movie, 'image'>[]
 }
 
@@ -33,6 +35,57 @@ export const GENRES: string[] = [...new Set(MOVIES.flatMap((m) => m.genres))].so
 
 /** `true` si les données viennent de TMDB (affiches HD + notes). */
 export const HAS_RATINGS = MOVIES.some((m) => m.rating != null)
+
+/** Humeurs présentes dans le catalogue, dans l'ordre d'affichage voulu. */
+export const MOOD_LABELS: Record<string, { emoji: string; label: string; adjective: string }> = {
+  drole: { emoji: '😂', label: 'Drôle', adjective: 'drôle' },
+  intense: { emoji: '💥', label: 'Intense', adjective: 'intense' },
+  facile: { emoji: '😌', label: 'Facile à regarder', adjective: 'facile à regarder' },
+  mindfuck: { emoji: '🤯', label: 'Mindfuck', adjective: 'qui retourne le cerveau' },
+  emotion: { emoji: '❤️', label: 'Émotion', adjective: 'émouvant' },
+  stressant: { emoji: '😱', label: 'Stressant', adjective: 'stressant' },
+  spectaculaire: { emoji: '🔥', label: 'Spectaculaire', adjective: 'spectaculaire' },
+  intelligent: { emoji: '🧠', label: 'Intelligent', adjective: 'intelligent' },
+  chill: { emoji: '🌙', label: 'Chill', adjective: 'chill' },
+  surprenant: { emoji: '🎲', label: 'Surprenant', adjective: 'surprenant' },
+}
+
+/** Genres avec leur article : les explications doivent se lire en français. */
+const GENRE_ARTICLES: Record<string, string> = {
+  Action: "l'action",
+  Animation: "l'animation",
+  Aventure: "l'aventure",
+  Comédie: 'la comédie',
+  Crime: 'le crime',
+  Drame: 'le drame',
+  Familial: 'le familial',
+  Fantastique: 'le fantastique',
+  Guerre: 'la guerre',
+  Histoire: "l'histoire",
+  Horreur: "l'horreur",
+  Musique: 'la musique',
+  Mystère: 'le mystère',
+  Romance: 'la romance',
+  'Science-Fiction': 'la science-fiction',
+  Thriller: 'le thriller',
+  Western: 'le western',
+}
+
+export const genreWithArticle = (g: string) => GENRE_ARTICLES[g] ?? g.toLowerCase()
+
+/** « de » / « d' » selon l'initiale — sinon on lit « de intense ». */
+export const elide = (word: string) =>
+  /^[aeiouyéèêàâîïôûh]/i.test(word) ? `d'${word}` : `de ${word}`
+
+export const moodAdjective = (id: string) => MOOD_LABELS[id]?.adjective ?? id
+
+export const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`
+
+export const MOODS: string[] = Object.keys(MOOD_LABELS).filter((id) =>
+  MOVIES.some((m) => m.moods.includes(id)),
+)
+
+export const moodLabel = (id: string) => MOOD_LABELS[id]?.label ?? id
 
 export function formatRuntime(minutes: number | null): string {
   if (!minutes) return '—'

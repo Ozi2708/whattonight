@@ -77,3 +77,10 @@ export const IconUser = ({ className = '' }: P) => (
     <path d="M4.5 20c1.3-3.6 4.1-5.4 7.5-5.4s6.2 1.8 7.5 5.4" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" />
   </svg>
 )
+
+export const IconVenn = ({ className = '' }: P) => (
+  <svg viewBox="0 0 24 24" fill="none" className={`${base} ${className}`} aria-hidden>
+    <circle cx="9" cy="12" r="6.2" stroke="currentColor" strokeWidth="1.9" />
+    <circle cx="15" cy="12" r="6.2" stroke="currentColor" strokeWidth="1.9" />
+  </svg>
+)

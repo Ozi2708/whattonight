@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useMemo, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Reel } from './Reel'
 import { Poster } from './Poster'
@@ -27,6 +27,20 @@ interface Props {
   tonight: Movie | null
   onChoose: (m: Movie | null) => void
   onOpenDetails: (m: Movie) => void
+
+  /**
+   * Mode duo : le pool est calculé en amont par le moteur de compatibilité.
+   * Quand il est fourni, les filtres solo disparaissent — les envies ont déjà
+   * été exprimées par les deux personnes.
+   */
+  externalPool?: Movie[]
+  eyebrow?: string
+  heading?: string
+  ctaLabel?: string
+  /** Bloc « pourquoi ce film », sous la fiche résultat. */
+  renderReasons?: (movie: Movie) => ReactNode
+  /** Signal de refus, pour le futur profil de goûts. */
+  onRefuse?: (movie: Movie) => void
 }
 
 type Phase = 'idle' | 'spinning'
@@ -43,12 +57,20 @@ export function RouletteScreen({
   tonight,
   onChoose,
   onOpenDetails,
+  externalPool,
+  eyebrow = 'Venn',
+  heading,
+  ctaLabel,
+  renderReasons,
+  onRefuse,
 }: Props) {
   const reduced = useReducedMotion() ?? false
   const [phase, setPhase] = useState<Phase>('idle')
   const [strip, setStrip] = useState<Movie[]>([])
 
-  const pool = useMemo(() => applyFilters(MOVIES, filters, seen), [filters, seen])
+  const soloPool = useMemo(() => applyFilters(MOVIES, filters, seen), [filters, seen])
+  const pool = externalPool ?? soloPool
+  const duo = externalPool !== undefined
   const activeCount = countActive(filters)
 
   const spin = useCallback(() => {
@@ -65,6 +87,12 @@ export function RouletteScreen({
     setStrip(next)
     setPhase('spinning')
   }, [pool, history, onChoose, onResult])
+
+  /** Relancer = refuser le film affiché : l'information vaut la peine d'être gardée. */
+  const respin = useCallback(() => {
+    if (result) onRefuse?.(result)
+    spin()
+  }, [result, onRefuse, spin])
 
   const handleLanded = useCallback(() => {
     // Court temps d'arrêt sur l'affiche avant de déplier la fiche : sans ça,
@@ -83,11 +111,9 @@ export function RouletteScreen({
       <AmbientGlow movie={tonight ?? result} />
 
       <header className="relative shrink-0">
-        <p className="text-[11px] font-semibold tracking-[0.2em] text-gold/70 uppercase">
-          What Tonight?
-        </p>
+        <p className="text-[11px] font-semibold tracking-[0.2em] text-gold/70 uppercase">{eyebrow}</p>
         <h1 className="mt-2 text-[30px] leading-[1.1] font-semibold tracking-tight text-balance">
-          {tonight ? 'Ce soir, c’est' : MOVIES_CATEGORY.question}
+          {tonight ? 'Ce soir, c’est' : (heading ?? MOVIES_CATEGORY.question)}
         </h1>
       </header>
 
@@ -98,7 +124,10 @@ export function RouletteScreen({
               key="tonight"
               movie={tonight}
               onDetails={() => onOpenDetails(tonight)}
-              onChangeMind={spin}
+              onChangeMind={() => {
+                onRefuse?.(tonight)
+                spin()
+              }}
             />
           ) : phase === 'spinning' ? (
             <motion.div
@@ -109,7 +138,9 @@ export function RouletteScreen({
               transition={{ duration: 0.25 }}
             >
               <Reel strip={strip} winnerIndex={WINNER_AT} reduced={reduced} onLanded={handleLanded} />
-              <p className="mt-8 text-center text-[13px] text-muted">On tire au sort…</p>
+              <p className="mt-8 text-center text-[13px] text-muted">
+                {duo ? 'On cherche dans votre terrain commun…' : 'On tire au sort…'}
+              </p>
             </motion.div>
           ) : result ? (
             <ResultCard
@@ -118,42 +149,46 @@ export function RouletteScreen({
               seen={seen.has(result.id)}
               favorite={favorites.has(result.id)}
               reduced={reduced}
+              reasons={renderReasons?.(result)}
               onDetails={() => onOpenDetails(result)}
               onGo={() => onChoose(result)}
-              onRespin={spin}
+              onRespin={respin}
               onSeen={() => library.toggleSeen(MOVIES_CATEGORY.id, result.id)}
               onFavorite={() => library.toggleFavorite(MOVIES_CATEGORY.id, result.id)}
             />
           ) : empty ? (
-            <EmptyState key="empty" onOpenFilters={onOpenFilters} />
+            <EmptyState key="empty" duo={duo} onOpenFilters={onOpenFilters} />
           ) : (
-            <IdleState key="idle" count={pool.length} />
+            <IdleState key="idle" count={pool.length} duo={duo} />
           )}
         </AnimatePresence>
       </div>
 
-      {/* Barre d'action : filtres légers + le gros bouton. */}
       {!tonight && phase !== 'spinning' && (
         <div className="relative shrink-0 pb-4">
-          <div className="mb-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <Chip active={filters.unseenOnly} onClick={onToggleUnseen}>
-              Jamais vu
-            </Chip>
-            <Chip active={activeCount > (filters.unseenOnly ? 1 : 0)} onClick={onOpenFilters}>
-              <span className="flex items-center gap-1.5">
-                <IconSliders className="h-3.5! w-3.5!" />
-                Filtres
-                {activeCount > 0 && (
-                  <span className="rounded-full bg-ink/20 px-1.5 text-[11px] font-semibold">
-                    {activeCount}
-                  </span>
-                )}
+          {/* Les filtres solo n'ont pas de sens en duo : les envies ont déjà
+              été exprimées par chacun, et une contrainte ne se modifie pas ici. */}
+          {!duo && (
+            <div className="mb-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
+              <Chip active={filters.unseenOnly} onClick={onToggleUnseen}>
+                Jamais vu
+              </Chip>
+              <Chip active={activeCount > (filters.unseenOnly ? 1 : 0)} onClick={onOpenFilters}>
+                <span className="flex items-center gap-1.5">
+                  <IconSliders className="h-3.5! w-3.5!" />
+                  Filtres
+                  {activeCount > 0 && (
+                    <span className="rounded-full bg-ink/20 px-1.5 text-[11px] font-semibold">
+                      {activeCount}
+                    </span>
+                  )}
+                </span>
+              </Chip>
+              <span className="ml-auto pl-2 text-[12px] whitespace-nowrap text-muted">
+                {pool.length} film{pool.length > 1 ? 's' : ''}
               </span>
-            </Chip>
-            <span className="ml-auto pl-2 text-[12px] whitespace-nowrap text-muted">
-              {pool.length} film{pool.length > 1 ? 's' : ''}
-            </span>
-          </div>
+            </div>
+          )}
 
           {/* Une fois un résultat affiché, « Relancer » vit dans la fiche :
               un second bouton ferait doublon et ferait déborder l'écran. */}
@@ -164,7 +199,7 @@ export function RouletteScreen({
               disabled={empty}
               className="w-full rounded-[22px] bg-gold py-[18px] text-[16px] font-bold tracking-tight text-ink shadow-[0_10px_40px_-10px_var(--color-gold)] transition-transform active:scale-[0.98] disabled:opacity-35 disabled:shadow-none"
             >
-              🎰 Lancer la roulette
+              {ctaLabel ?? '🎰 Lancer la roulette'}
             </button>
           )}
         </div>
@@ -175,7 +210,7 @@ export function RouletteScreen({
 
 /* ------------------------------------------------------------------ écrans */
 
-function IdleState({ count }: { count: number }) {
+function IdleState({ count, duo }: { count: number; duo: boolean }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -184,8 +219,10 @@ function IdleState({ count }: { count: number }) {
       className="flex flex-col items-center text-center"
     >
       <FannedPosters />
-      <p className="mt-8 max-w-[16rem] text-[15px] leading-relaxed text-muted text-balance">
-        {count} films triés sur le volet. Appuie, et la soirée est décidée.
+      <p className="mt-8 max-w-[17rem] text-[15px] leading-relaxed text-muted text-balance">
+        {duo
+          ? `${count} films correspondent à vos envies communes ce soir.`
+          : `${count} films triés sur le volet. Appuie, et la soirée est décidée.`}
       </p>
     </motion.div>
   )
@@ -219,7 +256,7 @@ function FannedPosters() {
   )
 }
 
-function EmptyState({ onOpenFilters }: { onOpenFilters: () => void }) {
+function EmptyState({ duo, onOpenFilters }: { duo: boolean; onOpenFilters: () => void }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -230,15 +267,19 @@ function EmptyState({ onOpenFilters }: { onOpenFilters: () => void }) {
       <div className="mb-5 text-4xl">🍿</div>
       <h2 className="text-xl font-semibold tracking-tight">Aucun film ne correspond</h2>
       <p className="mt-2 max-w-[17rem] text-[14px] leading-relaxed text-muted text-balance">
-        Tes filtres sont un peu trop serrés. Assouplis-en un et la roulette repart.
+        {duo
+          ? 'Vos envies sont difficiles à concilier ce soir.'
+          : 'Tes filtres sont un peu trop serrés. Assouplis-en un et la roulette repart.'}
       </p>
-      <button
-        type="button"
-        onClick={onOpenFilters}
-        className="mt-6 rounded-2xl border border-gold/50 bg-gold/10 px-6 py-3.5 text-[14px] font-semibold text-gold"
-      >
-        Modifier les filtres
-      </button>
+      {!duo && (
+        <button
+          type="button"
+          onClick={onOpenFilters}
+          className="mt-6 rounded-2xl border border-gold/50 bg-gold/10 px-6 py-3.5 text-[14px] font-semibold text-gold"
+        >
+          Modifier les filtres
+        </button>
+      )}
     </motion.div>
   )
 }
@@ -248,6 +289,7 @@ interface ResultProps {
   seen: boolean
   favorite: boolean
   reduced: boolean
+  reasons?: ReactNode
   onDetails: () => void
   onGo: () => void
   onRespin: () => void
@@ -260,6 +302,7 @@ function ResultCard({
   seen,
   favorite,
   reduced,
+  reasons,
   onDetails,
   onGo,
   onRespin,
@@ -302,10 +345,12 @@ function ResultCard({
         )}
       </div>
 
-      {movie.overview && (
-        <p className="mt-3 line-clamp-3 max-w-[22rem] text-[13.5px] leading-relaxed text-cream/65">
-          {movie.overview}
-        </p>
+      {reasons ?? (
+        movie.overview && (
+          <p className="mt-3 line-clamp-3 max-w-[22rem] text-[13.5px] leading-relaxed text-cream/65">
+            {movie.overview}
+          </p>
+        )
       )}
 
       <button
@@ -340,7 +385,7 @@ function GhostAction({
   onClick: () => void
   label: string
   active?: boolean
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <button

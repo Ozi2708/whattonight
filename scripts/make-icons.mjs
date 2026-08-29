@@ -25,17 +25,23 @@ const GOLD = '#ffc94a'
  */
 function icon(size, cover, bg = INK) {
   const w = size * cover
-  const h = (w * 72) / 100 // le glyphe est dessiné dans un repère 100 × 72
+  const h = (w * 62) / 100 // le glyphe est dessiné dans un repère 100 × 72
   const x = (size - w) / 2
   const y = (size - h) / 2
   const s = w / 100 // le trait est exprimé dans le repère local, donc mis à l'échelle avec lui
 
+  // Deux cercles, et leur intersection pleine : la marque, c'est le terrain
+  // commun — pas les deux personnes prises séparément.
+  const id = `lens${size}${Math.round(cover * 100)}`
   return Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   ${bg ? `<rect width="${size}" height="${size}" fill="${bg}"/>` : ''}
-  <g transform="translate(${x} ${y}) scale(${s})" fill="none" stroke="${GOLD}"
-     stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
-    <rect x="4" y="4" width="92" height="64" rx="16"/>
-    <path d="M34.7 4v64M65.3 4v64"/>
+  <defs><clipPath id="${id}"><circle cx="35" cy="31" r="26"/></clipPath></defs>
+  <g transform="translate(${x} ${y}) scale(${s})">
+    <g clip-path="url(#${id})"><circle cx="65" cy="31" r="26" fill="${GOLD}"/></g>
+    <g fill="none" stroke="${GOLD}" stroke-width="6">
+      <circle cx="35" cy="31" r="26"/>
+      <circle cx="65" cy="31" r="26"/>
+    </g>
   </g>
 </svg>`)
 }
