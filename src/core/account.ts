@@ -42,6 +42,17 @@ function set(patch: Partial<State>) {
   emit()
 }
 
+/**
+ * Le déclencheur SQL crée la ligne de profil dès l'inscription, avec un nom de
+ * remplacement. Tant que la personne ne l'a pas changé, elle n'a pas encore
+ * fait les présentations : sans ce test, l'écran de bienvenue était sauté et
+ * tout le monde s'appelait « Invité ».
+ */
+const PLACEHOLDER_NAMES = new Set(['', 'Invité', 'Invite'])
+
+export const needsIntroduction = (name: string | null | undefined) =>
+  PLACEHOLDER_NAMES.has((name ?? '').trim())
+
 const rowToProfile = (row: {
   id: string
   display_name: string
@@ -68,9 +79,10 @@ async function loadProfile(userId: string) {
   }
   // Le déclencheur `handle_new_user` crée la ligne ; s'il n'a pas encore
   // tourné, on considère l'utilisateur comme non encore présenté.
+  const introduced = data && !needsIntroduction(data.display_name)
   set({
-    status: data ? 'signed-in' : 'anonymous',
-    profile: data ? rowToProfile(data) : null,
+    status: introduced ? 'signed-in' : 'anonymous',
+    profile: introduced ? rowToProfile(data) : null,
     error: null,
   })
 }

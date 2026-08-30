@@ -13,6 +13,8 @@ interface Props {
   name: string
   onSubmit: (wishes: Wishes) => void
   busy?: boolean
+  /** Abandonne la session — présent pour ne jamais enfermer l'utilisateur. */
+  onCancel?: () => void
 }
 
 /**
@@ -26,7 +28,7 @@ interface Props {
  *
  * Objectif : moins de 15 secondes. Tout est visible d'un coup, rien à déplier.
  */
-export function WishesForm({ name, onSubmit, busy = false }: Props) {
+export function WishesForm({ name, onSubmit, busy = false, onCancel }: Props) {
   const [w, setW] = useState<Wishes>(EMPTY_WISHES)
 
   const toggle = (list: string[], v: string) =>
@@ -52,6 +54,15 @@ export function WishesForm({ name, onSubmit, busy = false }: Props) {
         <p className="mt-2 text-[13.5px] leading-relaxed text-muted">
           L’autre ne verra rien avant que vous ayez répondu tous les deux.
         </p>
+        {onCancel && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="mt-3 text-[13px] text-muted underline-offset-4 hover:text-cream hover:underline"
+          >
+            ← Annuler
+          </button>
+        )}
       </header>
 
       {/* ------------------------------------------------------- envies */}

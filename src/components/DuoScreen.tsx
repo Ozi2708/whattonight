@@ -20,6 +20,7 @@ import {
   loadDuo,
   loadWishes,
   recordSignal,
+  cancelSession,
   setSessionResult,
   submitWishes,
   useLiveSession,
@@ -186,10 +187,23 @@ function DuoFlow({
     let alive = true
     void (async () => {
       try {
-        const id = duoId ?? (await findMyDuo(profile.id))
+        // Le duo « actif » enregistré peut n'avoir qu'un membre : c'est le cas
+        // dès qu'on a généré un code sans que personne n'ait encore rejoint.
+        // Il ne doit surtout pas masquer un duo complet auquel on appartient.
+        let id = duoId ?? null
+        let found = id ? await loadDuo(id) : null
+
+        if (!found || found.members.length < 2) {
+          const complete = await findMyDuo(profile.id)
+          if (complete) {
+            id = complete
+            found = await loadDuo(complete)
+          }
+        }
+
         if (!alive) return
         setDuoId(id)
-        setDuo(id ? await loadDuo(id) : null)
+        setDuo(found)
       } catch (e) {
         // Ne jamais avaler : une erreur muette ici se traduit par un bouton
         // « Rejoindre » qui ne fait visiblement rien.
@@ -532,11 +546,31 @@ function DuoSession({
   }
 
   if (!me?.submitted) {
-    return <WishesForm name={profile.displayName} onSubmit={send} busy={busy} />
+    return (
+      <WishesForm
+        name={profile.displayName}
+        onSubmit={send}
+        busy={busy}
+        onCancel={async () => {
+          await cancelSession(session.id).catch(() => {})
+          await refresh()
+        }}
+      />
+    )
   }
 
   if (!ready) {
-    return <Waiting progress={progress} meId={profile.id} partnerName={partner?.displayName ?? 'ton duo'} />
+    return (
+      <Waiting
+        progress={progress}
+        meId={profile.id}
+        partnerName={partner?.displayName ?? 'ton duo'}
+        onCancel={async () => {
+          await cancelSession(session.id).catch(() => {})
+          await refresh()
+        }}
+      />
+    )
   }
 
   if (!matchResult) return <Centered>{error ?? 'On croise vos envies…'}</Centered>
@@ -710,10 +744,12 @@ function Waiting({
   progress,
   meId,
   partnerName,
+  onCancel,
 }: {
   progress: { userId: string; displayName: string; avatarEmoji: string; submitted: boolean }[]
   meId: string
   partnerName: string
+  onCancel: () => void
 }) {
   const ordered = [...progress].sort((a) => (a.userId === meId ? -1 : 1))
   return (
@@ -745,6 +781,15 @@ function Waiting({
       <p className="mt-6 text-[12.5px] text-muted">
         {plural(progress.filter((p) => p.submitted).length, 'réponse')} sur {progress.length}
       </p>
+
+      {/* Sortie de secours : on ne doit jamais rester coincé sur un écran. */}
+      <button
+        type="button"
+        onClick={onCancel}
+        className="mx-auto mt-8 text-[13px] text-muted underline-offset-4 hover:text-cream hover:underline"
+      >
+        Annuler cette session
+      </button>
     </div>
   )
 }

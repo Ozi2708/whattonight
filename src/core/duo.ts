@@ -186,6 +186,15 @@ export async function loadWishes(sessionId: string): Promise<Record<string, Wish
   return Object.fromEntries((data ?? []).map((r) => [r.user_id as string, r.wishes as Wishes]))
 }
 
+/** Abandonne la session courante : les deux repartent de l'espace duo. */
+export async function cancelSession(sessionId: string) {
+  const { error } = await client()
+    .from('sessions')
+    .update({ status: 'decided', result_movie_id: null })
+    .eq('id', sessionId)
+  if (error) throw error
+}
+
 export async function setSessionResult(sessionId: string, movieId: string) {
   const { error } = await client()
     .from('sessions')
