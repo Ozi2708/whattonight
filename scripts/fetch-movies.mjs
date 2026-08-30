@@ -26,6 +26,16 @@ const UA = 'Venn/0.2 (personal project; contact via app repo)'
 
 const arg = (name) => process.argv.find((a) => a.startsWith(`--${name}=`))?.split('=')[1]
 
+/**
+ * Mode « au mieux », utilisé pendant le build de production.
+ *
+ * Sans clé TMDB, on ne fait rien : le movies.json versionné est déjà bon.
+ * Avec une clé, on tente l'enrichissement — mais aucune panne réseau ne doit
+ * faire échouer un déploiement. En cas de problème, on garde les données
+ * existantes et on l'écrit dans le journal.
+ */
+const OPTIONAL = process.argv.includes('--optional')
+
 /* ------------------------------------------------------------------ utils */
 
 const slug = (s) =>
@@ -294,6 +304,21 @@ function normalizeGenre(name) {
 
 /* -------------------------------------------------------------------- main */
 
+/**
+ * Une clé v3 TMDB fait exactement 32 caractères hexadécimaux. Vérifier le
+ * format évite d'enchaîner 100 appels voués au 401 — et attrape le cas d'un
+ * texte de remplacement laissé tel quel, qui est passé inaperçu une fois.
+ */
+function validateKey(key) {
+  if (!key) return null
+  if (/^[0-9a-f]{32}$/i.test(key)) return key
+  console.warn(
+    `⚠ TMDB_API_KEY ignorée : « ${key.slice(0, 6)}… » (${key.length} caractères) ` +
+      "n'est pas une clé v3 valide — 32 caractères hexadécimaux attendus.",
+  )
+  return null
+}
+
 async function loadEnvKey() {
   if (process.env.TMDB_API_KEY) return process.env.TMDB_API_KEY.trim()
   for (const file of ['.env.local', '.env']) {
@@ -310,12 +335,17 @@ async function loadEnvKey() {
 
 async function main() {
   const wanted = arg('provider') ?? 'auto'
-  const key = wanted === 'wikipedia' ? null : await loadEnvKey()
+  const key = wanted === 'wikipedia' ? null : validateKey(await loadEnvKey())
   const provider = key ? 'tmdb' : 'wikipedia'
 
   if (wanted === 'tmdb' && !key) {
     console.error('✖ --provider=tmdb demandé mais TMDB_API_KEY est absent (.env.local).')
     process.exit(1)
+  }
+
+  if (OPTIONAL && !key) {
+    console.log('→ Pas de TMDB_API_KEY : on garde le movies.json versionné.')
+    return
   }
 
   console.log(`→ Source : ${provider}${provider === 'wikipedia' ? ' (affiches basse définition)' : ''}`)
@@ -385,6 +415,14 @@ async function main() {
     a.localeCompare(b, 'fr'),
   )
 
+  if (OPTIONAL && (clean.length < 100 || noPoster.length > 10)) {
+    console.warn(
+      `⚠ Récupération incomplète (${clean.length} films, ${noPoster.length} sans affiche) : ` +
+        'on conserve les données existantes plutôt que de les dégrader.',
+    )
+    return
+  }
+
   await mkdir(dirname(OUT), { recursive: true })
   await writeFile(
     OUT,
@@ -401,5 +439,10 @@ async function main() {
 
 main().catch((err) => {
   console.error(err)
+  // Un déploiement ne doit jamais tomber parce qu'une API tierce est lente.
+  if (OPTIONAL) {
+    console.warn('⚠ Enrichissement TMDB abandonné : le build continue avec les données versionnées.')
+    process.exit(0)
+  }
   process.exit(1)
 })

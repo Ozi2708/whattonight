@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node scripts/fetch-movies.mjs --optional && tsc -b && vite build",
     "preview": "vite preview",
     "fetch:movies": "node scripts/fetch-movies.mjs",
     "icons": "node scripts/make-icons.mjs"
