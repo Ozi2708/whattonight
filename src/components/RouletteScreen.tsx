@@ -41,6 +41,8 @@ interface Props {
   renderReasons?: (movie: Movie) => ReactNode
   /** Signal de refus, pour le futur profil de goûts. */
   onRefuse?: (movie: Movie) => void
+  /** Retour vers l'écran précédent — indispensable en duo. */
+  onBack?: () => void
 }
 
 type Phase = 'idle' | 'spinning'
@@ -63,6 +65,7 @@ export function RouletteScreen({
   ctaLabel,
   renderReasons,
   onRefuse,
+  onBack,
 }: Props) {
   const reduced = useReducedMotion() ?? false
   const [phase, setPhase] = useState<Phase>('idle')
@@ -111,6 +114,15 @@ export function RouletteScreen({
       <AmbientGlow movie={tonight ?? result} />
 
       <header className="relative shrink-0">
+        {onBack && (
+          <button
+            type="button"
+            onClick={onBack}
+            className="mb-2 text-[13px] text-muted underline-offset-4 hover:text-cream hover:underline"
+          >
+            ← Retour
+          </button>
+        )}
         <p className="text-[11px] font-semibold tracking-[0.2em] text-gold/70 uppercase">{eyebrow}</p>
         <h1 className="mt-2 text-[30px] leading-[1.1] font-semibold tracking-tight text-balance">
           {tonight ? 'Ce soir, c’est' : (heading ?? MOVIES_CATEGORY.question)}

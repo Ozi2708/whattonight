@@ -17,6 +17,7 @@ import {
   fetchLibrary,
   findMyDuo,
   joinDuo,
+  leaveDuo,
   loadDuo,
   loadWishes,
   recordSignal,
@@ -219,6 +220,14 @@ function DuoFlow({
 
   const { session, progress, loading, refresh } = useLiveSession(duo && duo.members.length >= 2 ? duoId : null)
 
+  /** Quitter le duo courant pour pouvoir s'associer à quelqu'un d'autre. */
+  const leave = useCallback(async () => {
+    if (!duoId) return
+    await leaveDuo(duoId, profile.id).catch(() => {})
+    setDuo(null)
+    setDuoId(null)
+  }, [duoId, profile.id])
+
   if (resolving) return <Centered>Un instant…</Centered>
   if (!duo || duo.members.length < 2) {
     return <ConnectPanel onConnected={(id) => setDuoId(id)} outerError={error} />
@@ -236,6 +245,7 @@ function DuoFlow({
       favorites={favorites}
       history={history}
       onOpenDetails={onOpenDetails}
+      onLeaveDuo={leave}
     />
   )
 }
@@ -399,6 +409,7 @@ function DuoSession({
   favorites,
   history,
   onOpenDetails,
+  onLeaveDuo,
 }: {
   profile: { id: string; displayName: string }
   duo: Duo
@@ -409,6 +420,7 @@ function DuoSession({
   favorites: Set<string>
   history: string[]
   onOpenDetails: (m: Movie) => void
+  onLeaveDuo: () => void
 }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -518,6 +530,22 @@ function DuoSession({
     }
   }
 
+  /** Termine la session courante : les deux repartent de l'espace duo. */
+  const restart = useCallback(async () => {
+    if (!session) return
+    setBusy(true)
+    try {
+      await cancelSession(session.id).catch(() => {})
+      setPhase('compat')
+      setWishes(null)
+      setResult(null)
+      setTonight(null)
+      await refresh()
+    } finally {
+      setBusy(false)
+    }
+  }, [session, refresh])
+
   const chooseMovie = useCallback(
     (movie: Movie | null) => {
       setTonight(movie)
@@ -541,6 +569,7 @@ function DuoSession({
         busy={busy}
         error={error}
         onOpenDetails={onOpenDetails}
+        onLeaveDuo={onLeaveDuo}
       />
     )
   }
@@ -551,10 +580,7 @@ function DuoSession({
         name={profile.displayName}
         onSubmit={send}
         busy={busy}
-        onCancel={async () => {
-          await cancelSession(session.id).catch(() => {})
-          await refresh()
-        }}
+        onCancel={restart}
       />
     )
   }
@@ -565,10 +591,7 @@ function DuoSession({
         progress={progress}
         meId={profile.id}
         partnerName={partner?.displayName ?? 'ton duo'}
-        onCancel={async () => {
-          await cancelSession(session.id).catch(() => {})
-          await refresh()
-        }}
+        onCancel={restart}
       />
     )
   }
@@ -587,6 +610,7 @@ function DuoSession({
         busy={busy}
         onStart={() => setPhase('roulette')}
         onAcceptRelaxation={acceptRelaxation}
+        onRestart={restart}
       />
     )
   }
@@ -609,6 +633,7 @@ function DuoSession({
       heading="Votre film de ce soir"
       ctaLabel="🎰 Trouver notre film"
       onRefuse={(m) => recordSignal(profile.id, 'refused', { movieId: m.id })}
+      onBack={() => setPhase('compat')}
       renderReasons={(movie) => {
         const scored = scoreById.get(movie.id)
         if (!scored || !participants) return null
@@ -671,6 +696,7 @@ function DuoHome({
   busy,
   error,
   onOpenDetails,
+  onLeaveDuo,
 }: {
   duo: Duo
   meId: string
@@ -679,6 +705,7 @@ function DuoHome({
   busy: boolean
   error: string | null
   onOpenDetails: (m: Movie) => void
+  onLeaveDuo: () => void
 }) {
   const last = lastMovieId ? MOVIES_BY_ID.get(lastMovieId) : undefined
   const ordered = [...duo.members].sort((a) => (a.userId === meId ? -1 : 1))
@@ -734,6 +761,14 @@ function DuoHome({
       </button>
 
       {error && <p className="mt-4 text-[13px] text-rose-300">{error}</p>}
+
+      <button
+        type="button"
+        onClick={onLeaveDuo}
+        className="mx-auto mt-8 text-[13px] text-muted underline-offset-4 hover:text-cream hover:underline"
+      >
+        Changer de duo
+      </button>
     </div>
   )
 }

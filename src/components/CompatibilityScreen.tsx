@@ -10,6 +10,8 @@ interface Props {
   onStart: () => void
   /** Accepté uniquement par la personne concernée — jamais appliqué d'office. */
   onAcceptRelaxation: (r: Relaxation) => void
+  /** Annule la session : les deux repartent de l'espace duo. */
+  onRestart?: () => void
   busy?: boolean
 }
 
@@ -25,11 +27,23 @@ export function CompatibilityScreen({
   names,
   onStart,
   onAcceptRelaxation,
+  onRestart,
   busy = false,
 }: Props) {
   const count = result.pool.length
 
-  if (count === 0) return <NoMatch result={result} currentUserId={currentUserId} names={names} onAccept={onAcceptRelaxation} busy={busy} />
+  if (count === 0) {
+    return (
+      <NoMatch
+        result={result}
+        currentUserId={currentUserId}
+        names={names}
+        onAccept={onAcceptRelaxation}
+        onRestart={onRestart}
+        busy={busy}
+      />
+    )
+  }
 
   const { commonGround: cg } = result
   const tags = [
@@ -100,7 +114,22 @@ export function CompatibilityScreen({
       >
         🎰 Trouver notre film
       </motion.button>
+
+      {onRestart && <Restart onRestart={onRestart} />}
     </div>
+  )
+}
+
+/** Toujours offrir une porte de sortie : on ne bloque personne sur un écran. */
+function Restart({ onRestart }: { onRestart: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onRestart}
+      className="mt-6 text-[13px] text-muted underline-offset-4 hover:text-cream hover:underline"
+    >
+      Recommencer avec d’autres envies
+    </button>
   )
 }
 
@@ -116,12 +145,14 @@ function NoMatch({
   currentUserId,
   names,
   onAccept,
+  onRestart,
   busy,
 }: {
   result: MatchResult
   currentUserId: string
   names: Record<string, string>
   onAccept: (r: Relaxation) => void
+  onRestart?: () => void
   busy: boolean
 }) {
   const options = result.relaxations
@@ -180,6 +211,12 @@ function NoMatch({
             })}
           </ul>
         </>
+      )}
+
+      {onRestart && (
+        <div className="mt-8 text-center">
+          <Restart onRestart={onRestart} />
+        </div>
       )}
     </div>
   )
