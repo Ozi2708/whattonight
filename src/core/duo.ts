@@ -63,27 +63,36 @@ export async function joinDuo(code: string): Promise<string> {
 /* -------------------------------------------------------------------- duo */
 
 export async function loadDuo(duoId: string): Promise<Duo | null> {
-  const { data, error } = await client()
+  // Deux requêtes plutôt qu'une jointure imbriquée : PostgREST exige une clé
+  // étrangère directe entre duo_members et profiles pour pouvoir l'imbriquer.
+  // Or les deux tables référencent auth.users sans se connaître entre elles,
+  // et la requête échouait — silencieusement, côté écran.
+  const { data: rows, error } = await client()
     .from('duo_members')
-    .select('user_id, profiles(display_name, avatar_emoji)')
+    .select('user_id')
     .eq('duo_id', duoId)
   if (error) throw error
 
-  const members = (data ?? []).map((row) => {
-    // La jointure remonte tantôt un objet, tantôt un tableau selon le typage.
-    const p = row.profiles as unknown as
-      | { display_name: string; avatar_emoji: string }
-      | { display_name: string; avatar_emoji: string }[]
-      | null
-    const profile = Array.isArray(p) ? p[0] : p
+  const ids = (rows ?? []).map((r) => r.user_id as string)
+  if (!ids.length) return null
+
+  const { data: profiles, error: profileError } = await client()
+    .from('profiles')
+    .select('id, display_name, avatar_emoji')
+    .in('id', ids)
+  if (profileError) throw profileError
+
+  const byId = new Map((profiles ?? []).map((p) => [p.id as string, p]))
+  const members = ids.map((userId) => {
+    const p = byId.get(userId)
     return {
-      userId: row.user_id as string,
-      displayName: profile?.display_name ?? 'Invité',
-      avatarEmoji: profile?.avatar_emoji ?? '🍿',
+      userId,
+      displayName: (p?.display_name as string) ?? 'Invité',
+      avatarEmoji: (p?.avatar_emoji as string) ?? '🍿',
     }
   })
 
-  return members.length ? { id: duoId, members } : null
+  return { id: duoId, members }
 }
 
 /** Duo actif de l'utilisateur : le plus récent qui compte deux membres. */

@@ -179,6 +179,7 @@ function DuoFlow({
   const [duoId, setDuoId] = useState<string | null>(profile.activeDuoId)
   const [duo, setDuo] = useState<Duo | null>(null)
   const [resolving, setResolving] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Résolution du duo : la V2 n'en affiche qu'un, le plus récent qui soit complet.
   useEffect(() => {
@@ -189,8 +190,10 @@ function DuoFlow({
         if (!alive) return
         setDuoId(id)
         setDuo(id ? await loadDuo(id) : null)
-      } catch {
-        /* hors ligne : on retombe sur l'écran de connexion */
+      } catch (e) {
+        // Ne jamais avaler : une erreur muette ici se traduit par un bouton
+        // « Rejoindre » qui ne fait visiblement rien.
+        if (alive) setError(friendlyError(e))
       } finally {
         if (alive) setResolving(false)
       }
@@ -204,7 +207,7 @@ function DuoFlow({
 
   if (resolving) return <Centered>Un instant…</Centered>
   if (!duo || duo.members.length < 2) {
-    return <ConnectPanel onConnected={(id) => setDuoId(id)} />
+    return <ConnectPanel onConnected={(id) => setDuoId(id)} outerError={error} />
   }
   if (loading) return <Centered>Chargement de votre duo…</Centered>
 
@@ -225,7 +228,13 @@ function DuoFlow({
 
 /* ------------------------------------------------------------- connexion */
 
-function ConnectPanel({ onConnected }: { onConnected: (duoId: string) => void }) {
+function ConnectPanel({
+  onConnected,
+  outerError = null,
+}: {
+  onConnected: (duoId: string) => void
+  outerError?: string | null
+}) {
   const [code, setCode] = useState<string | null>(null)
 
   // Tant que le code est affiché, on guette l'arrivée de l'autre personne.
@@ -355,7 +364,11 @@ function ConnectPanel({ onConnected }: { onConnected: (duoId: string) => void })
         </button>
       </section>
 
-      {error && <p className="mt-5 text-center text-[13px] text-rose-300">{error}</p>}
+      {(error ?? outerError) && (
+        <p className="mt-5 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-center text-[13px] leading-relaxed text-rose-200">
+          {error ?? outerError}
+        </p>
+      )}
     </div>
   )
 }
