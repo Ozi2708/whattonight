@@ -75,18 +75,28 @@ async function loadProfile(userId: string) {
   })
 }
 
-/** Session anonyme : créée à la volée, réutilisée ensuite. */
-async function ensureSession(): Promise<string | null> {
-  if (!supabase) return null
+/**
+ * Session anonyme : créée à la volée, réutilisée ensuite.
+ *
+ * Lève l'erreur d'origine au lieu de renvoyer `null` : un « connexion
+ * impossible » générique masquait la vraie cause, presque toujours « les
+ * connexions anonymes sont désactivées » côté Supabase.
+ */
+async function ensureSession(): Promise<string> {
+  if (!supabase) throw new Error('Supabase non configuré')
+
   const { data } = await supabase.auth.getSession()
   if (data.session) return data.session.user.id
 
   const { data: created, error } = await supabase.auth.signInAnonymously()
   if (error) {
     set({ status: 'unavailable', error: error.message })
-    return null
+    throw error
   }
-  return created.user?.id ?? null
+
+  const id = created.user?.id
+  if (!id) throw new Error('Session anonyme non créée')
+  return id
 }
 
 let started = false
@@ -95,9 +105,13 @@ export async function initAccount() {
   if (!isCloudConfigured || started) return
   started = true
 
-  const userId = await ensureSession()
-  if (!userId) return
-  await loadProfile(userId)
+  try {
+    await loadProfile(await ensureSession())
+  } catch (err) {
+    // L'écran de bienvenue reste affiché, avec la raison exacte.
+    set({ status: 'anonymous', error: err instanceof Error ? err.message : String(err) })
+    return
+  }
 
   supabase!.auth.onAuthStateChange((_event, session) => {
     if (session?.user) void loadProfile(session.user.id)
@@ -109,7 +123,6 @@ export async function initAccount() {
 export async function saveIdentity(displayName: string, avatarEmoji: string) {
   if (!supabase) throw new Error('Supabase non configuré')
   const userId = await ensureSession()
-  if (!userId) throw new Error('Connexion impossible')
 
   const { data, error } = await supabase
     .from('profiles')

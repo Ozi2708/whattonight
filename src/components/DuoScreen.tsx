@@ -45,7 +45,7 @@ export function DuoScreen({ seen, favorites, history, onOpenDetails }: Props) {
 
   if (!isCloudConfigured) return <CloudMissing />
   if (account.status === 'loading') return <Centered>Connexion…</Centered>
-  if (!account.profile) return <Onboarding />
+  if (!account.profile) return <Onboarding initialError={account.error} />
 
   return <DuoFlow profile={account.profile} seen={seen} favorites={favorites} history={history} onOpenDetails={onOpenDetails} />
 }
@@ -82,11 +82,15 @@ function CloudMissing() {
 
 /* ------------------------------------------------------------ onboarding */
 
-function Onboarding() {
+function Onboarding({ initialError }: { initialError: string | null }) {
   const [name, setName] = useState('')
   const [emoji, setEmoji] = useState(AVATARS[0])
   const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // Une erreur survenue au démarrage est montrée tout de suite : inutile
+  // d'attendre que la personne tape son prénom pour découvrir que ça bloque.
+  const [error, setError] = useState<string | null>(
+    initialError ? friendlyError(new Error(initialError)) : null,
+  )
 
   const submit = async () => {
     if (!name.trim()) return
@@ -137,7 +141,11 @@ function Onboarding() {
         ))}
       </div>
 
-      {error && <p className="mt-4 text-center text-[13px] text-rose-300">{error}</p>}
+      {error && (
+        <p className="mt-4 rounded-2xl border border-rose-400/30 bg-rose-400/10 px-4 py-3 text-center text-[13px] leading-relaxed text-rose-200">
+          {error}
+        </p>
+      )}
 
       <button
         type="button"

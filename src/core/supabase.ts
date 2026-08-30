@@ -35,8 +35,11 @@ export function friendlyError(error: unknown): string {
   if (/invalide ou expiré/i.test(raw)) return 'Ce code est invalide ou a expiré.'
   if (/duo est complet/i.test(raw)) return 'Ce duo est déjà complet.'
   if (/le vôtre/i.test(raw)) return 'C’est ton propre code : partage-le à l’autre personne.'
-  if (/anonymous.*disabled|anonymous sign-ins/i.test(raw)) {
-    return 'Les connexions anonymes sont désactivées dans Supabase (Authentication → Sign In / Providers).'
+  if (/anonymous|signups? not allowed|provider.*disabled/i.test(raw)) {
+    return 'Connexions anonymes désactivées. Dans Supabase : Authentication → Sign In / Providers → active « Anonymous sign-ins ».'
+  }
+  if (/relation .* does not exist|schema cache|does not exist/i.test(raw)) {
+    return 'Les tables sont absentes : colle supabase/schema.sql dans le SQL Editor de Supabase, puis Run.'
   }
   if (/failed to fetch|networkerror/i.test(raw)) return 'Pas de connexion au serveur.'
   if (/invalid api key|jwt/i.test(raw)) {
