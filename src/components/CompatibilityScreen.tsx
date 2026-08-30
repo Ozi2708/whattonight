@@ -50,7 +50,13 @@ export function CompatibilityScreen({
     )
   }
 
-  const { commonGround: cg } = result
+  const { commonGround: cg, funnel } = result
+  // Le titre doit décrire ce qui s'est réellement passé. Quand personne
+  // n'exprime de préférence, aucun tri n'a eu lieu : annoncer « on a trouvé »
+  // laisserait croire à un travail de sélection qui n'a pas été fait.
+  const narrowed = funnel.preferences < funnel.constraints
+  const limited = funnel.constraints < funnel.total
+
   const tags = [
     ...cg.genres.slice(0, 2),
     ...cg.moods.slice(0, 2).map(moodLabel),
@@ -73,7 +79,11 @@ export function CompatibilityScreen({
         transition={{ delay: 0.15 }}
         className="mt-7 text-[27px] leading-tight font-semibold tracking-tight text-balance"
       >
-        On a trouvé {plural(count, 'film')} qui vous vont à tous les deux.
+        {narrowed
+          ? `On a trouvé ${plural(count, 'film')} qui vous vont à tous les deux.`
+          : limited
+            ? `${plural(count, 'film')} respectent vos limites à tous les deux.`
+            : `Tout est ouvert : ${plural(count, 'film')} sur la table.`}
       </motion.h1>
 
       {tags.length > 0 && (
@@ -105,8 +115,12 @@ export function CompatibilityScreen({
         transition={{ delay: 0.4 }}
         className="mt-6 text-[12.5px] text-muted"
       >
-        {result.funnel.total} films → {result.funnel.constraints} respectent vos limites →{' '}
-        {result.funnel.preferences} vous ressemblent
+        {/* On n'affiche que les étapes qui ont réellement retiré des films :
+            « 100 → 100 → 100 » n'apprend rien et fait douter du calcul. */}
+        {funnel.total} films
+        {limited && ` → ${funnel.constraints} respectent vos limites`}
+        {narrowed && ` → ${funnel.preferences} vous ressemblent`}
+        {!limited && !narrowed && ' — vous n’avez encore rien écarté'}
       </motion.p>
 
       {canStart ? (

@@ -43,7 +43,7 @@ export function WishesForm({ name, onSubmit, busy = false, onCancel }: Props) {
   const nothingPicked = !pref.surprise && !pref.moods.length && !pref.genres.length
 
   return (
-    <div className="px-5 pb-32">
+    <div className="px-5 pb-40">
       <header className="pt-[max(1.25rem,env(safe-area-inset-top))]">
         <p className="text-[11px] font-semibold tracking-[0.2em] text-gold/70 uppercase">
           {name}, à toi
@@ -200,8 +200,10 @@ export function WishesForm({ name, onSubmit, busy = false, onCancel }: Props) {
         </div>
       </Block>
 
-      {/* Barre d'envoi : toujours atteignable sans remonter. */}
-      <div className="fixed inset-x-0 bottom-0 z-30 mx-auto max-w-lg border-t border-line bg-ink/95 px-5 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur">
+      {/* Barre d'envoi : posée juste au-dessus de la barre d'onglets, jamais
+          dessous. Les deux sont fixées en bas de l'écran ; sans ce décalage,
+          l'onglet recouvrait le bouton et aucun défilement ne le ramenait. */}
+      <div className="fixed inset-x-0 bottom-[var(--tabbar-h)] z-30 mx-auto max-w-lg border-t border-line bg-ink/95 px-5 pt-3 pb-3 backdrop-blur">
         <button
           type="button"
           onClick={() => onSubmit(w)}

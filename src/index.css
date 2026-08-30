@@ -17,6 +17,12 @@
 }
 
 @layer base {
+  :root {
+    /* Valeur de repli : la barre d’onglets la remplace par sa hauteur réelle
+       dès le premier rendu (cf. TabBar). */
+    --tabbar-h: 64px;
+  }
+
   html {
     background: var(--color-ink);
     -webkit-tap-highlight-color: transparent;

@@ -71,7 +71,7 @@ export default function App() {
   }
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-lg flex-col pb-[76px]">
+    <div className="mx-auto flex min-h-dvh max-w-lg flex-col pb-[var(--tabbar-h)]">
       <main className="flex flex-1 flex-col">
         {state.tab === 'duo' && (
           <DuoScreen

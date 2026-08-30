@@ -162,14 +162,72 @@ function pairScore(scores: number[]): number {
   return 0.65 * min + 0.35 * mean
 }
 
+/* ----------------------------------------------------------- hasard semé */
+
+/**
+ * Hasard reproductible.
+ *
+ * Les deux téléphones calculent le pool chacun de leur côté : ils doivent
+ * tomber sur exactement le même. Un `Math.random()` donnerait deux résultats
+ * différents, et l'écran de compatibilité annoncerait deux nombres de films
+ * différents pour la même soirée. La graine est l'identifiant de session :
+ * stable pour les deux, neuve à chaque soirée.
+ */
+function seedFrom(text: string): number {
+  let h = 2166136261
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i)
+    h = Math.imul(h, 16777619)
+  }
+  return h >>> 0
+}
+
+function mulberry32(seed: number): () => number {
+  let a = seed
+  return () => {
+    a = (a + 0x6d2b79f5) | 0
+    let t = Math.imul(a ^ (a >>> 15), 1 | a)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+function shuffle<T>(list: T[], rnd: () => number): T[] {
+  const out = [...list]
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rnd() * (i + 1))
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
+
 /* ----------------------------------------------------------------- pool */
 
 const THRESHOLD = 0.5
-const POOL_MIN = 5
-const POOL_MAX = 24
+const POOL_MIN = 8
 
-function buildPool(eligible: Movie[], participants: Participant[]): ScoredMovie[] {
-  const scored: ScoredMovie[] = eligible
+/**
+ * Le pool : tous les films qui atteignent le seuil, sans plafond.
+ *
+ * Il y avait ici un `slice(0, 24)`. Il paraissait anodin ; il ne l'était pas.
+ * Les scores ne prennent qu'une poignée de valeurs distinctes, donc les ex æquo
+ * sont la règle, pas l'exception — et quand personne n'exprime de préférence
+ * (ou que les deux demandent une surprise), les 100 films sont à égalité
+ * PARFAITE. Le tri étant stable, le plafond découpait alors toujours les
+ * 24 mêmes têtes de catalogue, et les 76 autres étaient inatteignables.
+ *
+ * D'où deux corrections indissociables :
+ *  - mélanger AVANT de trier, pour que les ex æquo ne soient plus départagés
+ *    par l'ordre du fichier de données ;
+ *  - ne plus plafonner, pour ne plus annoncer « 24 films » quand la vraie
+ *    réponse est « les 100 ».
+ */
+function buildPool(
+  eligible: Movie[],
+  participants: Participant[],
+  rnd: () => number,
+): ScoredMovie[] {
+  const scored: ScoredMovie[] = shuffle(eligible, rnd)
     .map((movie) => {
       const perUser: Record<string, number> = {}
       for (const p of participants) perUser[p.userId] = scoreFor(movie, p)
@@ -179,10 +237,8 @@ function buildPool(eligible: Movie[], participants: Participant[]): ScoredMovie[
 
   // Une préférence n'élimine jamais : si le seuil est trop sélectif, on garde
   // quand même les meilleurs plutôt que de renvoyer une liste vide.
-  let pool = scored.filter((s) => s.score >= THRESHOLD)
-  if (pool.length < POOL_MIN) pool = scored.slice(0, Math.min(POOL_MIN + 3, scored.length))
-
-  return pool.slice(0, POOL_MAX)
+  const pool = scored.filter((s) => s.score >= THRESHOLD)
+  return pool.length >= POOL_MIN ? pool : scored.slice(0, Math.min(POOL_MIN, scored.length))
 }
 
 /* --------------------------------------------------------- terrain commun */
@@ -309,14 +365,19 @@ function findRelaxations(movies: Movie[], participants: Participant[]): Relaxati
 
 /* -------------------------------------------------------------- entrée */
 
-export function match(movies: Movie[], participants: Participant[]): MatchResult {
+/**
+ * @param seed  Identifiant de session. Départage les ex æquo de façon
+ *              identique sur les deux téléphones, et différemment d'un soir
+ *              à l'autre.
+ */
+export function match(movies: Movie[], participants: Participant[], seed = ''): MatchResult {
   const anyUnseenOnly = participants.some((p) => p.wishes.constraints.unseenOnly)
   const unseen = anyUnseenOnly
     ? movies.filter((m) => !participants.some((p) => p.seen.has(m.id))).length
     : movies.length
 
   const eligible = movies.filter((m) => satisfies(m, participants))
-  const pool = buildPool(eligible, participants)
+  const pool = buildPool(eligible, participants, mulberry32(seedFrom(seed)))
 
   return {
     eligible,

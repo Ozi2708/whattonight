@@ -507,8 +507,10 @@ function DuoSession({
 
   const matchResult: MatchResult | null = useMemo(() => {
     if (!participants || participants.some((p) => !p.wishes)) return null
-    return match(MOVIES, participants)
-  }, [participants])
+    // L'identifiant de session sert de graine : les deux téléphones calculent
+    // le même pool, et il change à chaque nouvelle soirée.
+    return match(MOVIES, participants, session?.id ?? '')
+  }, [participants, session?.id])
 
   const names = useMemo(
     () => Object.fromEntries(duo.members.map((m) => [m.userId, m.displayName])),
