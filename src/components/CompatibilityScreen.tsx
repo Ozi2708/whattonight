@@ -12,6 +12,9 @@ interface Props {
   onAcceptRelaxation: (r: Relaxation) => void
   /** Annule la session : les deux repartent de l'espace duo. */
   onRestart?: () => void
+  /** Seul l'hôte lance la roulette, pour que les deux voient le même film. */
+  canStart?: boolean
+  hostName?: string
   busy?: boolean
 }
 
@@ -28,6 +31,8 @@ export function CompatibilityScreen({
   onStart,
   onAcceptRelaxation,
   onRestart,
+  canStart = true,
+  hostName,
   busy = false,
 }: Props) {
   const count = result.pool.length
@@ -104,16 +109,29 @@ export function CompatibilityScreen({
         {result.funnel.preferences} vous ressemblent
       </motion.p>
 
-      <motion.button
-        type="button"
-        onClick={onStart}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.45 }}
-        className="mt-9 w-full max-w-sm rounded-[22px] bg-gold py-[18px] text-[16px] font-bold tracking-tight text-ink shadow-[0_10px_40px_-10px_var(--color-gold)] transition-transform active:scale-[0.98]"
-      >
-        🎰 Trouver notre film
-      </motion.button>
+      {canStart ? (
+        <motion.button
+          type="button"
+          onClick={onStart}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45 }}
+          className="mt-9 w-full max-w-sm rounded-[22px] bg-gold py-[18px] text-[16px] font-bold tracking-tight text-ink shadow-[0_10px_40px_-10px_var(--color-gold)] transition-transform active:scale-[0.98]"
+        >
+          🎰 Trouver notre film
+        </motion.button>
+      ) : (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.45 }}
+          className="mt-9 w-full max-w-sm rounded-[22px] border border-line bg-surface/60 py-[18px] text-[14.5px] text-muted"
+        >
+          {hostName ? `${hostName} lance la roulette…` : 'En attente du lancement…'}
+          <br />
+          <span className="text-[12.5px] opacity-80">Tu la verras défiler en direct.</span>
+        </motion.p>
+      )}
 
       {onRestart && <Restart onRestart={onRestart} />}
     </div>

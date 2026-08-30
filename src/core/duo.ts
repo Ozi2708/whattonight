@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { setActiveDuo } from './account'
 import type { Wishes } from '../movies/matching'
@@ -25,6 +26,8 @@ export interface Duo {
 export interface Session {
   id: string
   duoId: string
+  /** Hôte de la session : seul lui pilote la roulette. */
+  createdBy: string
   status: 'collecting' | 'ready' | 'decided'
   submittedCount: number
   resultMovieId: string | null
@@ -126,6 +129,7 @@ export async function leaveDuo(duoId: string, userId: string) {
 const toSession = (row: Record<string, unknown>): Session => ({
   id: row.id as string,
   duoId: row.duo_id as string,
+  createdBy: row.created_by as string,
   status: row.status as Session['status'],
   submittedCount: (row.submitted_count as number) ?? 0,
   resultMovieId: (row.result_movie_id as string | null) ?? null,
@@ -256,6 +260,31 @@ export function recordSignal(
     .then(undefined, () => {})
 }
 
+/**
+ * Tirage diffusé en direct.
+ *
+ * Passe par un message éphémère plutôt que par la base : il n'y a rien à
+ * conserver, et cela évite d'ajouter des colonnes — donc de faire rejouer le
+ * schéma SQL. Le film retenu, lui, est bien persisté à l'arrivée, pour qui
+ * aurait manqué l'animation.
+ */
+export interface SpinPayload {
+  /** Identifiants des films de la bande, pour rejouer exactement le même défilé. */
+  strip: string[]
+  winnerIndex: number
+  /** Change à chaque tirage : c'est ce qui déclenche l'animation côté invité. */
+  nonce: number
+}
+
+/** N'écrit que le film tiré, sans clore la session. */
+export async function markSpinResult(sessionId: string, movieId: string) {
+  const { error } = await client()
+    .from('sessions')
+    .update({ result_movie_id: movieId })
+    .eq('id', sessionId)
+  if (error) throw error
+}
+
 /* -------------------------------------------------------------- hook live */
 
 /**
@@ -265,11 +294,14 @@ export function recordSignal(
  * `session_wishes` : le contenu des envies ne doit pas circuler avant que les
  * deux aient répondu.
  */
-export function useLiveSession(duoId: string | null) {
+export function useLiveSession(duoId: string | null, onSpin?: (p: SpinPayload) => void) {
   const [session, setSession] = useState<Session | null>(null)
   const [progress, setProgress] = useState<Progress[]>([])
   const [loading, setLoading] = useState(true)
   const sessionIdRef = useRef<string | null>(null)
+  const channelRef = useRef<RealtimeChannel | null>(null)
+  const spinCb = useRef(onSpin)
+  spinCb.current = onSpin
 
   const refresh = useCallback(async () => {
     if (!duoId || !supabase) {
@@ -293,15 +325,27 @@ export function useLiveSession(duoId: string | null) {
   useEffect(() => {
     if (!duoId || !supabase) return
     const channel = supabase
-      .channel(`duo:${duoId}`)
+      // `self: false` : l'hôte ne se réécoute pas, il anime déjà localement.
+      .channel(`duo:${duoId}`, { config: { broadcast: { self: false } } })
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'sessions', filter: `duo_id=eq.${duoId}` },
         () => void refresh(),
       )
+      .on('broadcast', { event: 'spin' }, ({ payload }) => spinCb.current?.(payload as SpinPayload))
       .subscribe()
-    return () => void supabase!.removeChannel(channel)
+
+    channelRef.current = channel
+    return () => {
+      channelRef.current = null
+      void supabase!.removeChannel(channel)
+    }
   }, [duoId, refresh])
 
-  return { session, progress, loading, refresh }
+  /** Diffuse un tirage à l'autre appareil. Sans effet si le canal est tombé. */
+  const sendSpin = useCallback((payload: SpinPayload) => {
+    void channelRef.current?.send({ type: 'broadcast', event: 'spin', payload })
+  }, [])
+
+  return { session, progress, loading, refresh, sendSpin }
 }

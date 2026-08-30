@@ -1,10 +1,10 @@
-import { useCallback, useMemo, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react'
 import { Reel } from './Reel'
 import { Poster } from './Poster'
 import { Chip } from './Chip'
 import { IconCheck, IconHeart, IconRefresh, IconSliders, IconStar } from './icons'
-import { MOVIES, formatRuntime, type Movie } from '../movies/catalog'
+import { MOVIES, MOVIES_BY_ID, formatRuntime, type Movie } from '../movies/catalog'
 import { applyFilters, countActive, type Filters } from '../movies/filters'
 import { pickNext, shuffle } from '../core/picker'
 import { library } from '../core/library'
@@ -43,6 +43,18 @@ interface Props {
   onRefuse?: (movie: Movie) => void
   /** Retour vers l'écran précédent — indispensable en duo. */
   onBack?: () => void
+
+  /**
+   * Spectateur : l'autre personne pilote. On voit le même tirage, on garde
+   * seulement les actions personnelles (déjà vu, favori).
+   */
+  spectator?: boolean
+  /** Nom de celui qui pilote, pour l'annoncer clairement. */
+  hostName?: string
+  /** Tirage reçu de l'hôte : la bande est rejouée à l'identique. */
+  remoteSpin?: { strip: string[]; winnerIndex: number; nonce: number } | null
+  /** Émis par l'hôte au lancement, pour diffusion à l'autre appareil. */
+  onSpinStart?: (strip: Movie[], winnerIndex: number) => void
 }
 
 type Phase = 'idle' | 'spinning'
@@ -66,6 +78,10 @@ export function RouletteScreen({
   renderReasons,
   onRefuse,
   onBack,
+  spectator = false,
+  hostName,
+  remoteSpin,
+  onSpinStart,
 }: Props) {
   const reduced = useReducedMotion() ?? false
   const [phase, setPhase] = useState<Phase>('idle')
@@ -89,7 +105,21 @@ export function RouletteScreen({
     onResult(null)
     setStrip(next)
     setPhase('spinning')
-  }, [pool, history, onChoose, onResult])
+    onSpinStart?.(next, WINNER_AT)
+  }, [pool, history, onChoose, onResult, onSpinStart])
+
+  // Côté spectateur : on rejoue la bande exacte de l'hôte, pas un tirage local.
+  useEffect(() => {
+    if (!remoteSpin) return
+    const rebuilt = remoteSpin.strip.map((id) => MOVIES_BY_ID.get(id)).filter((m): m is Movie => !!m)
+    if (rebuilt.length !== remoteSpin.strip.length) return
+    onChoose(null)
+    onResult(null)
+    setStrip(rebuilt)
+    setPhase('spinning')
+    // Seul le nonce identifie un nouveau tirage : la bande peut être identique.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remoteSpin?.nonce])
 
   /** Relancer = refuser le film affiché : l'information vaut la peine d'être gardée. */
   const respin = useCallback(() => {
@@ -163,6 +193,7 @@ export function RouletteScreen({
               reduced={reduced}
               reasons={renderReasons?.(result)}
               onDetails={() => onOpenDetails(result)}
+              spectator={spectator}
               onGo={() => onChoose(result)}
               onRespin={respin}
               onSeen={() => library.toggleSeen(MOVIES_CATEGORY.id, result.id)}
@@ -202,9 +233,15 @@ export function RouletteScreen({
             </div>
           )}
 
+          {spectator && !result && (
+            <p className="rounded-2xl border border-line bg-surface/60 py-4 text-center text-[14px] text-muted">
+              {hostName ? `${hostName} lance la roulette…` : 'En attente du lancement…'}
+            </p>
+          )}
+
           {/* Une fois un résultat affiché, « Relancer » vit dans la fiche :
               un second bouton ferait doublon et ferait déborder l'écran. */}
-          {!result && (
+          {!spectator && !result && (
             <button
               type="button"
               onClick={spin}
@@ -297,6 +334,7 @@ function EmptyState({ duo, onOpenFilters }: { duo: boolean; onOpenFilters: () =>
 }
 
 interface ResultProps {
+  spectator: boolean
   movie: Movie
   seen: boolean
   favorite: boolean
@@ -310,6 +348,7 @@ interface ResultProps {
 }
 
 function ResultCard({
+  spectator,
   movie,
   seen,
   favorite,
@@ -365,18 +404,26 @@ function ResultCard({
         )
       )}
 
-      <button
-        type="button"
-        onClick={onGo}
-        className="mt-5 w-full max-w-[22rem] rounded-[22px] bg-gold py-[18px] text-[16px] font-bold tracking-tight text-ink shadow-[0_10px_40px_-10px_var(--color-gold)] transition-transform active:scale-[0.98]"
-      >
-        C’est parti
-      </button>
+      {!spectator && (
+        <button
+          type="button"
+          onClick={onGo}
+          className="mt-5 w-full max-w-[22rem] rounded-[22px] bg-gold py-[18px] text-[16px] font-bold tracking-tight text-ink shadow-[0_10px_40px_-10px_var(--color-gold)] transition-transform active:scale-[0.98]"
+        >
+          C’est parti
+        </button>
+      )}
 
-      <div className="mt-2.5 grid w-full max-w-[22rem] grid-cols-3 gap-2">
-        <GhostAction onClick={onRespin} label="Relancer">
-          <IconRefresh className="h-[18px]! w-[18px]!" />
-        </GhostAction>
+      <div
+        className={`mt-${spectator ? '5' : '2.5'} grid w-full max-w-[22rem] gap-2 ${
+          spectator ? 'grid-cols-2' : 'grid-cols-3'
+        }`}
+      >
+        {!spectator && (
+          <GhostAction onClick={onRespin} label="Relancer">
+            <IconRefresh className="h-[18px]! w-[18px]!" />
+          </GhostAction>
+        )}
         <GhostAction onClick={onSeen} label="Déjà vu" active={seen}>
           <IconCheck className="h-[18px]! w-[18px]!" />
         </GhostAction>

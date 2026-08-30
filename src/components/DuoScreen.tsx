@@ -20,12 +20,14 @@ import {
   leaveDuo,
   loadDuo,
   loadWishes,
+  markSpinResult,
   recordSignal,
   cancelSession,
   setSessionResult,
   submitWishes,
   useLiveSession,
   type Duo,
+  type SpinPayload,
   type UserLibrary,
 } from '../core/duo'
 
@@ -218,7 +220,12 @@ function DuoFlow({
     }
   }, [profile.id, duoId])
 
-  const { session, progress, loading, refresh } = useLiveSession(duo && duo.members.length >= 2 ? duoId : null)
+  // Tirage reçu de l'hôte : c'est lui qui déclenche l'animation chez l'invité.
+  const [remoteSpin, setRemoteSpin] = useState<SpinPayload | null>(null)
+  const { session, progress, loading, refresh, sendSpin } = useLiveSession(
+    duo && duo.members.length >= 2 ? duoId : null,
+    setRemoteSpin,
+  )
 
   /** Quitter le duo courant pour pouvoir s'associer à quelqu'un d'autre. */
   const leave = useCallback(async () => {
@@ -246,6 +253,8 @@ function DuoFlow({
       history={history}
       onOpenDetails={onOpenDetails}
       onLeaveDuo={leave}
+      remoteSpin={remoteSpin}
+      sendSpin={sendSpin}
     />
   )
 }
@@ -410,6 +419,8 @@ function DuoSession({
   history,
   onOpenDetails,
   onLeaveDuo,
+  remoteSpin,
+  sendSpin,
 }: {
   profile: { id: string; displayName: string }
   duo: Duo
@@ -421,6 +432,8 @@ function DuoSession({
   history: string[]
   onOpenDetails: (m: Movie) => void
   onLeaveDuo: () => void
+  remoteSpin: SpinPayload | null
+  sendSpin: (p: SpinPayload) => void
 }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -431,6 +444,26 @@ function DuoSession({
   const [tonight, setTonight] = useState<Movie | null>(null)
 
   const partner = duo.members.find((m) => m.userId !== profile.id)
+
+  // L'hôte est celui qui a ouvert la session : lui seul lance la roulette,
+  // sinon chacun tomberait sur un film différent.
+  const isHost = session?.createdBy === profile.id
+  const host = duo.members.find((m) => m.userId === session?.createdBy)
+
+  // Un tirage reçu fait basculer l'invité sur la roulette, où qu'il en soit.
+  useEffect(() => {
+    if (remoteSpin) setPhase('roulette')
+  }, [remoteSpin])
+
+  // Chaque session repart de zéro. Sans ça, le film de la session précédente
+  // restait affiché : entre l'annulation et l'arrivée de la nouvelle session,
+  // le filet de rattrapage ci-dessous reprenait un résultat périmé.
+  useEffect(() => {
+    setPhase('compat')
+    setWishes(null)
+    setResult(null)
+    setTonight(null)
+  }, [session?.id])
   const me = progress.find((p) => p.userId === profile.id)
   const ready = session?.status === 'ready' || session?.status === 'decided'
 
@@ -546,6 +579,15 @@ function DuoSession({
     }
   }, [session, refresh])
 
+  // Filet de sécurité : si l'invité a manqué le message éphémère (app en
+  // arrière-plan, réseau coupé), le film retenu est repris depuis la base.
+  useEffect(() => {
+    // Jamais le résultat d'une session close : il appartient au passé.
+    if (isHost || result || !session?.resultMovieId || session.status === 'decided') return
+    const movie = MOVIES_BY_ID.get(session.resultMovieId)
+    if (movie) setResult(movie)
+  }, [isHost, result, session?.resultMovieId, session?.status])
+
   const chooseMovie = useCallback(
     (movie: Movie | null) => {
       setTonight(movie)
@@ -611,6 +653,8 @@ function DuoSession({
         onStart={() => setPhase('roulette')}
         onAcceptRelaxation={acceptRelaxation}
         onRestart={restart}
+        canStart={isHost}
+        hostName={host?.displayName}
       />
     )
   }
@@ -634,6 +678,14 @@ function DuoSession({
       ctaLabel="🎰 Trouver notre film"
       onRefuse={(m) => recordSignal(profile.id, 'refused', { movieId: m.id })}
       onBack={() => setPhase('compat')}
+      spectator={!isHost}
+      hostName={host?.displayName}
+      remoteSpin={remoteSpin}
+      onSpinStart={(strip, winnerIndex) => {
+        sendSpin({ strip: strip.map((m) => m.id), winnerIndex, nonce: Date.now() })
+        // Persisté aussi : l'invité doit pouvoir rattraper une diffusion ratée.
+        void markSpinResult(session.id, strip[winnerIndex].id).catch(() => {})
+      }}
       renderReasons={(movie) => {
         const scored = scoreById.get(movie.id)
         if (!scored || !participants) return null

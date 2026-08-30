@@ -108,6 +108,21 @@ seul**. Il chiffre ce que chaque assouplissement rapporterait — « Si Manon
 accepte jusqu'à 2h30 : +8 films » — et seule la personne concernée peut
 l'accepter, depuis son propre téléphone.
 
+### Un seul pilote, deux spectateurs
+
+Une fois le terrain commun calculé, **seul l'hôte** — celui qui a ouvert la
+session — lance la roulette. L'autre la voit défiler en direct et s'arrêter sur
+le même film. Sans cette règle, chacun tirait de son côté et obtenait un film
+différent, ce qui vide le duo de son sens.
+
+Le tirage est diffusé par un message éphémère (Realtime broadcast) plutôt que
+par la base : il n'y a rien à conserver, et cela évite d'ajouter des colonnes.
+Le film retenu est tout de même persisté à l'arrivée, pour qui aurait manqué
+l'animation — application en arrière-plan, réseau coupé.
+
+L'invité garde ses actions personnelles (déjà vu, favori) mais ni « Relancer »
+ni « C'est parti » : ce sont des décisions communes.
+
 ### Le secret des réponses
 
 Tant que les deux n'ont pas répondu, personne ne voit les envies de l'autre.
