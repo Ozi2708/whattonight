@@ -18,9 +18,9 @@ interface Props {
  * « Mes goûts » — le portrait que Venn se fait de la personne.
  *
  * Parti pris : aucun pourcentage. Un « 73 % thriller » aurait l'air précis
- * sans l'être — il n'existe pas d'unité de mesure du goût. Des mots, des
- * jauges relatives et des affiches disent la même chose sans mentir sur la
- * nature de l'information.
+ * sans l'être — il n'existe pas d'unité de mesure du goût. Des formes, des
+ * mots et des affiches disent la même chose sans mentir sur la nature de
+ * l'information.
  *
  * Et surtout : tout ce qui est affiché doit être corrigeable. Venn propose une
  * lecture, il ne décrète pas qui vous êtes.
@@ -37,8 +37,8 @@ export function TasteSection({
 
   if (profile.depth === 'vierge') return <EmptyTaste onDiscover={onDiscover} />
 
-  const topGenres = profile.genres.filter((g) => g.score > 0).slice(0, 5)
-  const disliked = profile.genres.filter((g) => g.score <= -0.2).slice(0, 3)
+  const liked = profile.genres.filter((g) => g.score >= 0.06).slice(0, 6)
+  const avoided = profile.genres.filter((g) => g.score <= -0.2).slice(0, 3)
 
   return (
     <section className="mt-8">
@@ -47,11 +47,12 @@ export function TasteSection({
         <p className="mt-0.5 text-[12.5px] text-muted">{profile.depthLabel}</p>
       </header>
 
-      {/* --------------------------------------------- floraison des humeurs */}
-      {profile.traits.length >= 2 && (
-        <div className="mt-5 rounded-3xl border border-line bg-surface/40 p-5">
-          <Bloom traits={profile.traits} />
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
+      {/* ------------------------------------------------------- la silhouette */}
+      <div className="ambient mt-5 overflow-hidden rounded-3xl border border-line bg-surface/30 px-3 pt-4 pb-6">
+        <Signature moods={profile.moods} />
+
+        {profile.traits.length > 0 && (
+          <div className="mt-1 flex flex-wrap justify-center gap-2">
             {profile.traits.map((t) => (
               <span
                 key={t.key}
@@ -62,88 +63,101 @@ export function TasteSection({
               </span>
             ))}
           </div>
-          {profile.sentence && (
-            <p className="mt-4 text-center text-[13.5px] leading-relaxed text-cream/75 text-balance">
-              {profile.sentence}
-            </p>
-          )}
-        </div>
-      )}
+        )}
+
+        {profile.sentence && (
+          <p className="mx-auto mt-4 max-w-[19rem] text-center text-[14px] leading-relaxed text-cream/80 text-balance">
+            {profile.sentence}
+          </p>
+        )}
+      </div>
 
       {/* ------------------------------------------------------------ genres */}
-      {topGenres.length > 0 && (
-        <div className="mt-4 space-y-2">
-          {topGenres.map((g) => (
-            <Gauge key={g.key} affinity={g} max={topGenres[0].score} />
-          ))}
-          {disliked.length > 0 && (
-            <p className="pt-1 text-[12.5px] text-muted">
-              Tu évites plutôt {disliked.map((g) => g.label.toLowerCase()).join(', ')}.
-            </p>
+      {liked.length > 0 && (
+        <div className="mt-4 rounded-3xl border border-line bg-surface/30 p-5">
+          <h3 className="text-center text-[11.5px] font-semibold tracking-[0.16em] text-muted uppercase">
+            Tes terrains
+          </h3>
+          {/* Taille et intensité par palier, pas par valeur continue : c'est
+              exactement ce que le moteur sait dire, ni plus ni moins. */}
+          <div className="mt-3.5 flex flex-wrap items-center justify-center gap-2">
+            {liked.map((g, i) => (
+              <motion.span
+                key={g.key}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.05 * i, type: 'spring', stiffness: 260, damping: 20 }}
+                className={`rounded-full border ${CHIP[weight(g.score, liked[0].score)]}`}
+              >
+                {g.label}
+              </motion.span>
+            ))}
+          </div>
+
+          {avoided.length > 0 && (
+            <div className="mt-4 border-t border-line/70 pt-3.5">
+              <p className="text-center text-[11px] tracking-wide text-muted uppercase">
+                Beaucoup moins
+              </p>
+              <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+                {avoided.map((g) => (
+                  <span
+                    key={g.key}
+                    className="rounded-full border border-line bg-ink/40 px-2.5 py-1 text-[11.5px] text-muted"
+                  >
+                    {g.label}
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}
 
       {/* --------------------------------------- films qui te représentent */}
       {profile.representative.length >= 3 && (
-        <div className="mt-7">
-          <h3 className="text-[13px] font-semibold tracking-wide text-muted uppercase">
-            Films qui te représentent
+        <div className="mt-4 rounded-3xl border border-line bg-surface/30 px-5 py-6">
+          <h3 className="text-center text-[11.5px] font-semibold tracking-[0.16em] text-muted uppercase">
+            Ceux qui te ressemblent
           </h3>
-          <ul className="mt-3 -mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1 no-scrollbar">
-            {profile.representative.map((m) => (
-              <li key={m.id} className="w-[86px] shrink-0">
-                <button type="button" onClick={() => onOpen(m)} className="block w-full text-left">
-                  <Poster
-                    src={m.posterSmall ?? m.image}
-                    alt={m.title}
-                    className="w-full rounded-xl border border-white/10"
-                    style={{ aspectRatio: '2 / 3' }}
-                  />
-                  <p className="mt-1.5 truncate text-[11px] text-cream/70">{m.title}</p>
-                </button>
-              </li>
-            ))}
-          </ul>
+          <PosterFan movies={profile.representative} onOpen={onOpen} />
         </div>
       )}
 
       {/* ------------------------------------------------ côté inattendu */}
       {profile.insights.length > 0 && (
-        <div className="mt-7">
-          <h3 className="text-[13px] font-semibold tracking-wide text-muted uppercase">
-            Ton côté inattendu
-          </h3>
-          <ul className="mt-3 space-y-2.5">
-            {profile.insights.map((insight) => (
-              <li
-                key={insight.text}
-                className="flex items-center gap-3 rounded-2xl border border-line bg-surface/50 p-3"
-              >
-                <span className="flex -space-x-3">
-                  {insight.movies.slice(0, 3).map((m) => (
-                    <Poster
-                      key={m.id}
-                      src={m.posterSmall ?? m.image}
-                      alt=""
-                      className="w-8 shrink-0 rounded border border-white/15"
-                      style={{ aspectRatio: '2 / 3' }}
-                    />
-                  ))}
+        <div className="mt-4 space-y-2.5">
+          {profile.insights.map((insight) => (
+            <div
+              key={insight.text}
+              className="flex items-center gap-3.5 rounded-3xl border border-line bg-surface/30 p-4"
+            >
+              <span className="flex shrink-0 -space-x-4">
+                {insight.movies.slice(0, 3).map((m, i) => (
+                  <Poster
+                    key={m.id}
+                    src={m.posterSmall ?? m.image}
+                    alt=""
+                    className="w-9 rounded-md border border-white/15 shadow-lg"
+                    style={{ aspectRatio: '2 / 3', zIndex: 3 - i }}
+                  />
+                ))}
+              </span>
+              <p className="text-[13px] leading-snug text-cream/80">
+                <span className="mb-0.5 block text-[10.5px] tracking-[0.16em] text-gold/70 uppercase">
+                  Ton côté inattendu
                 </span>
-                <p className="text-[13px] leading-snug text-cream/80">{insight.text}</p>
-              </li>
-            ))}
-          </ul>
+                {insight.text}
+              </p>
+            </div>
+          ))}
         </div>
       )}
 
       {/* --------------------------------------------------- ça te ressemble */}
-      <div className="mt-7 rounded-3xl border border-line bg-surface/40 p-4 text-center">
+      <div className="mt-4 rounded-3xl border border-line bg-surface/30 p-4 text-center">
         {confirmed ? (
-          <p className="py-1 text-[13.5px] text-gold">
-            Noté. Venn continue d’affiner en te lisant.
-          </p>
+          <p className="py-1 text-[13.5px] text-gold">Noté. Venn continue d’affiner en te lisant.</p>
         ) : (
           <>
             <p className="text-[14px] font-medium">Ça te ressemble&nbsp;?</p>
@@ -187,16 +201,50 @@ export function TasteSection({
   )
 }
 
+/**
+ * Taille des genres : RELATIVE au profil de la personne, pas à une échelle
+ * absolue.
+ *
+ * Les paliers absolus (« très fort », « fort »…) laissaient régulièrement les
+ * six genres dans la même case : aucune hiérarchie ne se voyait, et le nuage
+ * n'apprenait rien. Or ce que Venn sait réellement, c'est un CLASSEMENT — pas
+ * une valeur sur une échelle universelle. Le montrer ainsi est à la fois plus
+ * lisible et plus honnête.
+ */
+function weight(score: number, top: number): 'majeur' | 'net' | 'discret' {
+  const ratio = top > 0 ? score / top : 0
+  if (ratio >= 0.85) return 'majeur'
+  if (ratio >= 0.6) return 'net'
+  return 'discret'
+}
+
+const CHIP: Record<string, string> = {
+  majeur:
+    'border-gold bg-gold px-4 py-2.5 text-[16.5px] font-bold tracking-tight text-ink shadow-[0_6px_22px_-8px_var(--color-gold)]',
+  net: 'border-gold/55 bg-gold/12 px-3.5 py-2 text-[13.5px] font-semibold text-gold',
+  discret: 'border-line bg-surface px-3 py-1.5 text-[12px] text-cream/60',
+}
+
 /* ------------------------------------------------------------- portrait vide */
 
 function EmptyTaste({ onDiscover }: { onDiscover: () => void }) {
   return (
-    <section className="mt-8 rounded-3xl border border-line bg-surface/40 p-6 text-center">
-      <div className="text-3xl">🧬</div>
-      <h2 className="mt-3 text-[18px] font-semibold tracking-tight">Ton ADN cinéma</h2>
+    <section className="ambient mt-8 rounded-3xl border border-line bg-surface/30 p-6 text-center">
+      <svg viewBox="0 0 100 100" className="mx-auto h-24 w-24" aria-hidden>
+        <polygon
+          points={EMPTY_SHAPE}
+          fill="var(--color-gold)"
+          fillOpacity="0.08"
+          stroke="var(--color-gold)"
+          strokeOpacity="0.4"
+          strokeWidth="1.5"
+          strokeDasharray="4 4"
+        />
+      </svg>
+      <h2 className="mt-4 text-[18px] font-semibold tracking-tight">Ton ADN cinéma</h2>
       <p className="mt-2 text-[13.5px] leading-relaxed text-muted text-balance">
-        Venn ne te connaît pas encore. Il apprend tout seul au fil des soirées —
-        ou tu peux lui donner un coup de pouce en une minute.
+        Ta silhouette est encore vide. Venn la dessine tout seul au fil des
+        soirées — ou tu peux l’aider en une minute.
       </p>
       <button
         type="button"
@@ -209,86 +257,197 @@ function EmptyTaste({ onDiscover }: { onDiscover: () => void }) {
   )
 }
 
-/* ------------------------------------------------------------------ jauge */
-
-function Gauge({ affinity, max }: { affinity: Affinity; max: number }) {
-  // Jauge RELATIVE : elle situe le genre par rapport aux autres goûts de la
-  // personne, pas sur une échelle absolue qui n'existe pas.
-  const width = Math.max(0.12, Math.min(1, affinity.score / (max || 1)))
-  return (
-    <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface/40 px-4 py-3">
-      <span className="w-[102px] shrink-0 truncate text-[12.5px] font-medium">{affinity.label}</span>
-      <span className="h-1.5 flex-1 overflow-hidden rounded-full bg-ink">
-        <motion.span
-          className="block h-full rounded-full bg-gold"
-          initial={{ width: 0 }}
-          animate={{ width: `${width * 100}%` }}
-          transition={{ duration: 0.7, ease: 'easeOut' }}
-        />
-      </span>
-      <span className="w-[66px] shrink-0 text-right text-[11px] text-muted">
-        {affinity.adjusted ? 'ajusté' : affinity.level}
-      </span>
-    </div>
-  )
-}
-
-/* -------------------------------------------------------------- floraison */
+/* ---------------------------------------------------------------- silhouette */
 
 /**
- * Les humeurs dominantes, en pétales.
+ * L'ordre des axes n'est pas décoratif.
  *
- * Une forme organique plutôt qu'un histogramme : on ne cherche pas à faire
- * lire des valeurs, mais à donner une silhouette reconnaissable — « voilà à
- * quoi ressemble mon cinéma ».
+ * Les humeurs sont rangées du plus léger au plus chargé, de sorte que les
+ * contraires se retrouvent face à face : « facile » en face de « mindfuck »,
+ * « chill » en face de « intense ». La forme obtenue penche alors visiblement
+ * d'un côté — c'est ce qui en fait une signature reconnaissable plutôt qu'un
+ * graphique de plus. Ranger ces dix axes au hasard donnerait des étoiles
+ * toutes semblables.
  */
-function Bloom({ traits }: { traits: Affinity[] }) {
-  const petals = useMemo(() => {
-    const max = Math.max(...traits.map((t) => t.score), 0.01)
-    return traits.map((t, i) => {
-      const angle = (i / traits.length) * Math.PI * 2 - Math.PI / 2
-      const length = 22 + 34 * Math.min(1, t.score / max)
-      return {
-        key: t.key,
-        x: 60 + Math.cos(angle) * length,
-        y: 60 + Math.sin(angle) * length,
-        r: 15 + 9 * Math.min(1, t.score / max),
-        emoji: t.emoji,
-      }
-    })
-  }, [traits])
+const AXES = [
+  'drole',
+  'facile',
+  'chill',
+  'emotion',
+  'intelligent',
+  'mindfuck',
+  'surprenant',
+  'stressant',
+  'intense',
+  'spectaculaire',
+]
+
+const CENTER = 130
+const R_MIN = 16
+const R_MAX = 84
+const R_EMOJI = 108
+
+/** Un score dans [-0.45, 0.45] occupe tout le rayon ; au-delà, on plafonne. */
+function radius(score: number): number {
+  const t = Math.max(0, Math.min(1, (score + 0.45) / 0.9))
+  return R_MIN + t * (R_MAX - R_MIN)
+}
+
+const point = (i: number, r: number) => {
+  const angle = (i / AXES.length) * Math.PI * 2 - Math.PI / 2
+  return [CENTER + Math.cos(angle) * r, CENTER + Math.sin(angle) * r] as const
+}
+
+const EMPTY_SHAPE = AXES.map((_, i) => {
+  const angle = (i / AXES.length) * Math.PI * 2 - Math.PI / 2
+  return `${(50 + Math.cos(angle) * 34).toFixed(1)},${(50 + Math.sin(angle) * 34).toFixed(1)}`
+}).join(' ')
+
+function Signature({ moods }: { moods: Affinity[] }) {
+  const byKey = useMemo(() => new Map(moods.map((m) => [m.key, m])), [moods])
+
+  const nodes = AXES.map((key, i) => {
+    const affinity = byKey.get(key)
+    // Une humeur sans preuve reste au milieu : l'absence de donnée ne doit pas
+    // se lire comme un rejet.
+    const score = affinity?.score ?? 0
+    const [x, y] = point(i, radius(score))
+    const [ex, ey] = point(i, R_EMOJI)
+    return { key, score, x, y, ex, ey, emoji: MOOD_LABELS[key]?.emoji ?? '' }
+  })
+
+  const shape = nodes.map((n) => `${n.x.toFixed(1)},${n.y.toFixed(1)}`).join(' ')
+  const strong = nodes.filter((n) => n.score >= 0.16)
 
   return (
-    /* Le cadrage doit englober le pétale le plus long ET son rayon : en
-       0..120, le pétale du haut sortait par le bord et se trouvait coupé. */
-    <svg viewBox="-24 -24 168 168" className="mx-auto h-40 w-40" aria-hidden>
-      {petals.map((p, i) => (
-        <motion.circle
-          key={p.key}
-          cx={p.x}
-          cy={p.y}
-          r={p.r}
-          fill="var(--color-gold)"
-          initial={{ opacity: 0, scale: 0.3 }}
-          animate={{ opacity: 0.24, scale: 1 }}
-          transition={{ delay: 0.06 * i, type: 'spring', stiffness: 180, damping: 16 }}
-          style={{ transformOrigin: `${p.x}px ${p.y}px`, mixBlendMode: 'screen' }}
+    <svg viewBox="0 0 260 260" className="mx-auto h-auto w-full max-w-[264px]" aria-hidden>
+      <defs>
+        {/* Dégradé plutôt qu'un aplat : la forme prend du volume et le regard
+            va vers le centre, là où se lit la dominante. */}
+        <radialGradient id="adn-fill" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="var(--color-gold)" stopOpacity="0.42" />
+          <stop offset="70%" stopColor="var(--color-gold)" stopOpacity="0.16" />
+          <stop offset="100%" stopColor="var(--color-gold)" stopOpacity="0.08" />
+        </radialGradient>
+        <filter id="adn-glow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="5" result="b" />
+          <feMerge>
+            <feMergeNode in="b" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+      </defs>
+      {/* Repères : trois anneaux discrets, juste assez pour donner l'échelle. */}
+      {[0.34, 0.67, 1].map((k) => (
+        <circle
+          key={k}
+          cx={CENTER}
+          cy={CENTER}
+          r={R_MIN + (R_MAX - R_MIN) * k}
+          fill="none"
+          stroke="var(--color-line)"
+          strokeWidth="1"
+          opacity={0.55}
         />
       ))}
-      <circle cx="60" cy="60" r="15" fill="var(--color-gold)" opacity="0.5" />
-      {petals.map((p) => (
+      {AXES.map((key, i) => {
+        const [x, y] = point(i, R_MAX)
+        return (
+          <line
+            key={key}
+            x1={CENTER}
+            y1={CENTER}
+            x2={x}
+            y2={y}
+            stroke="var(--color-line)"
+            strokeWidth="1"
+            opacity={0.4}
+          />
+        )
+      })}
+
+      <motion.g
+        initial={{ scale: 0.2, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: 'spring', stiffness: 130, damping: 18, mass: 0.9 }}
+        style={{ transformOrigin: `${CENTER}px ${CENTER}px` }}
+      >
+        {/* Le remplissage n'est pas flouté : appliquer le halo à l'ensemble
+            noyait les sommets et toutes les silhouettes se ressemblaient. */}
+        <polygon points={shape} fill="url(#adn-fill)" />
+        <polygon
+          points={shape}
+          fill="none"
+          stroke="var(--color-gold)"
+          strokeWidth="2.5"
+          strokeLinejoin="round"
+          filter="url(#adn-glow)"
+        />
+        {/* Seuls les sommets marqués sont matérialisés : un point partout
+            ferait ressembler tous les profils à la même roue dentée. */}
+        {strong.map((n) => (
+          <circle key={n.key} cx={n.x} cy={n.y} r="4" fill="var(--color-gold)" />
+        ))}
+      </motion.g>
+
+      {nodes.map((n) => (
         <text
-          key={`e-${p.key}`}
-          x={p.x}
-          y={p.y + 5}
+          key={`e-${n.key}`}
+          x={n.ex}
+          y={n.ey + 5}
           textAnchor="middle"
-          className="text-[13px]"
-          style={{ fontSize: 14 }}
+          style={{ fontSize: n.score >= 0.16 ? 17 : 13 }}
+          opacity={n.score >= 0.16 ? 1 : 0.28}
         >
-          {p.emoji}
+          {n.emoji}
         </text>
       ))}
     </svg>
+  )
+}
+
+/* ------------------------------------------------------------ éventail */
+
+/**
+ * Les affiches en éventail plutôt qu'en liste : elles se lisent comme une main
+ * de cartes, et c'est l'image qui parle, pas le titre.
+ */
+function PosterFan({ movies, onOpen }: { movies: Movie[]; onOpen: (m: Movie) => void }) {
+  const shown = movies.slice(0, 5)
+  const middle = (shown.length - 1) / 2
+
+  return (
+    <div className="mt-5 flex items-end justify-center">
+      {shown.map((m, i) => {
+        const offset = i - middle
+        return (
+          <motion.button
+            key={m.id}
+            type="button"
+            onClick={() => onOpen(m)}
+            title={m.title}
+            aria-label={m.title}
+            initial={{ opacity: 0, y: 14, rotate: 0 }}
+            animate={{ opacity: 1, y: Math.abs(offset) * 7, rotate: offset * 7 }}
+            transition={{ delay: 0.06 * i, type: 'spring', stiffness: 200, damping: 18 }}
+            whileTap={{ scale: 0.94 }}
+            className="w-[74px] shrink-0"
+            style={{
+              marginLeft: i === 0 ? 0 : -16,
+              transformOrigin: 'bottom center',
+              zIndex: shown.length - Math.abs(Math.round(offset)),
+            }}
+          >
+            <Poster
+              src={m.posterSmall ?? m.image}
+              alt=""
+              className="w-full rounded-lg border border-white/15 shadow-[0_10px_24px_-10px_rgba(0,0,0,0.9)]"
+              style={{ aspectRatio: '2 / 3' }}
+            />
+          </motion.button>
+        )
+      })}
+    </div>
   )
 }
 
