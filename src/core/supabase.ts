@@ -12,7 +12,14 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
  * définies dans supabase/schema.sql.
  */
 const url = import.meta.env.VITE_SUPABASE_URL?.trim()
-const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim()
+
+// Supabase a remplacé la clé « anon » (JWT) par une clé « publishable »
+// (sb_publishable_…). Les deux fonctionnent avec supabase-js ; on accepte les
+// deux noms pour que la variable d'environnement ne contredise pas l'écran
+// affiché dans le tableau de bord.
+const anonKey = (
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_ANON_KEY
+)?.trim()
 
 export const isCloudConfigured = Boolean(url && anonKey)
 
@@ -32,5 +39,8 @@ export function friendlyError(error: unknown): string {
     return 'Les connexions anonymes sont désactivées dans Supabase (Authentication → Sign In / Providers).'
   }
   if (/failed to fetch|networkerror/i.test(raw)) return 'Pas de connexion au serveur.'
+  if (/invalid api key|jwt/i.test(raw)) {
+    return 'Clé Supabase invalide : vérifie que c’est bien la clé publishable (ou anon), pas la clé secrète.'
+  }
   return raw || 'Une erreur est survenue.'
 }

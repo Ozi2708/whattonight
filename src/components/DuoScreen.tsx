@@ -74,7 +74,7 @@ function CloudMissing() {
       <p className="mt-4 font-mono text-[12px] text-cream/60">
         VITE_SUPABASE_URL
         <br />
-        VITE_SUPABASE_ANON_KEY
+        VITE_SUPABASE_PUBLISHABLE_KEY
       </p>
     </div>
   )

@@ -39,10 +39,19 @@ l'écran de bienvenue.
 
 **Project Settings** → **API** :
 
-| Valeur                    | Variable                 |
-| ------------------------- | ------------------------ |
-| Project URL               | `VITE_SUPABASE_URL`      |
-| Project API key **anon**  | `VITE_SUPABASE_ANON_KEY` |
+| Valeur dans Supabase                              | Variable                        |
+| ------------------------------------------------- | ------------------------------- |
+| **Project URL** (`https://xxxxx.supabase.co`)     | `VITE_SUPABASE_URL`             |
+| **Publishable key** (`sb_publishable_…`)          | `VITE_SUPABASE_PUBLISHABLE_KEY` |
+
+Si ton projet affiche encore l'ancien système (onglet « Legacy anon,
+service_role »), la clé `anon` au format JWT fait exactement le même travail :
+mets-la dans `VITE_SUPABASE_ANON_KEY`. L'app accepte les deux noms.
+
+🚫 **Jamais** `sb_secret_…` ni `service_role`. Ces clés contournent toutes les
+politiques RLS. Placée dans une variable `VITE_`, une clé secrète se
+retrouverait dans le JavaScript public : n'importe qui pourrait lire et
+modifier toute la base.
 
 Ces deux valeurs sont **publiques par conception**. Elles finissent dans le
 JavaScript envoyé aux navigateurs, c'est normal et sans danger : elles ne font
@@ -58,7 +67,7 @@ toutes les politiques.
 
 ```
 VITE_SUPABASE_URL=https://xxxxx.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGci...
+VITE_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 
 **Sur Vercel** — Project → Settings → Environment Variables. Ajoute les deux,
