@@ -104,3 +104,18 @@ avance.
 Le palier gratuit de Supabase couvre très largement cet usage : deux
 utilisateurs, quelques centaines de lignes. Les projets gratuits sont mis en
 pause après une semaine sans activité, et se réveillent au premier appel.
+
+
+## Migration V3
+
+La V3 ajoute les avis, le mode de soirée et les corrections de portrait.
+Colle **`supabase/schema.v3.sql`** dans le SQL Editor, puis Run. Le script est
+additif et rejouable : rien n’est supprimé, la V2 continue de fonctionner
+pendant le déploiement.
+
+Tant qu’il n’est pas appliqué :
+
+- « On a une envie précise » fonctionne normalement ;
+- « Choisis pour nous » affiche un message qui renvoie ici, plutôt que de
+  servir silencieusement autre chose ;
+- les avis et le profil du duo restent locaux à l’appareil.

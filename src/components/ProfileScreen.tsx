@@ -5,15 +5,30 @@ import { IdentityCard } from './IdentityCard'
 import { MOVIES, MOVIES_BY_ID, formatRuntime, type Movie } from '../movies/catalog'
 import { CATEGORIES, MOVIES_CATEGORY } from '../core/categories'
 import { library } from '../core/library'
+import { TasteSection } from './TasteSection'
+import type { TasteProfile } from '../movies/taste'
 
 interface Props {
   seen: Set<string>
   favorites: Set<string>
   lastPicked: string | null
+  taste: TasteProfile
   onOpen: (m: Movie) => void
+  onDiscover: () => void
+  onAdjust: (key: string, value: number) => void
+  onResetAdjustments: () => void
 }
 
-export function ProfileScreen({ seen, favorites, lastPicked, onOpen }: Props) {
+export function ProfileScreen({
+  seen,
+  favorites,
+  lastPicked,
+  taste,
+  onOpen,
+  onDiscover,
+  onAdjust,
+  onResetAdjustments,
+}: Props) {
   const [confirming, setConfirming] = useState(false)
   const progress = Math.round((seen.size / MOVIES.length) * 100)
   const last = lastPicked ? MOVIES_BY_ID.get(lastPicked) : undefined
@@ -23,6 +38,14 @@ export function ProfileScreen({ seen, favorites, lastPicked, onOpen }: Props) {
       <h1 className="text-[26px] leading-tight font-semibold tracking-tight">Profil</h1>
 
       <IdentityCard />
+
+      <TasteSection
+        profile={taste}
+        onOpen={onOpen}
+        onDiscover={onDiscover}
+        onAdjust={onAdjust}
+        onResetAdjustments={onResetAdjustments}
+      />
 
       <InstallCard />
 

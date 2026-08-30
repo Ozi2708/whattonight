@@ -3,6 +3,7 @@ import type { RealtimeChannel } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { setActiveDuo } from './account'
 import type { Wishes } from '../movies/matching'
+import type { Verdict } from './types'
 
 /**
  * Duos et sessions « ce soir ».
@@ -23,11 +24,21 @@ export interface Duo {
   members: Member[]
 }
 
+/**
+ * Comment la soirée est menée.
+ *  - 'quick'   : « Choisis pour nous » — deux questions, Venn fait le reste.
+ *  - 'precise' : « On a une envie précise » — le formulaire complet de la V2.
+ * Le mode vit sur la session, pas dans un état local : l'invité doit voir le
+ * même formulaire que l'hôte.
+ */
+export type SessionMode = 'quick' | 'precise'
+
 export interface Session {
   id: string
   duoId: string
   /** Hôte de la session : seul lui pilote la roulette. */
   createdBy: string
+  mode: SessionMode
   status: 'collecting' | 'ready' | 'decided'
   submittedCount: number
   resultMovieId: string | null
@@ -130,20 +141,50 @@ const toSession = (row: Record<string, unknown>): Session => ({
   id: row.id as string,
   duoId: row.duo_id as string,
   createdBy: row.created_by as string,
+  mode: ((row.mode as string) ?? 'precise') as SessionMode,
   status: row.status as Session['status'],
   submittedCount: (row.submitted_count as number) ?? 0,
   resultMovieId: (row.result_movie_id as string | null) ?? null,
   createdAt: row.created_at as string,
 })
 
-export async function createSession(duoId: string, userId: string): Promise<Session> {
+/**
+ * Ouvre une soirée.
+ *
+ * La colonne `mode` arrive avec la migration V3. Tant qu'elle n'est pas
+ * appliquée, on ne casse pas la V2 : une soirée « envie précise » repart sans
+ * la colonne, à l'identique. En revanche « Choisis pour nous » ne peut pas être
+ * servi silencieusement comme autre chose — on le dit.
+ */
+export async function createSession(
+  duoId: string,
+  userId: string,
+  mode: SessionMode = 'precise',
+): Promise<Session> {
   const { data, error } = await client()
+    .from('sessions')
+    .insert({ duo_id: duoId, created_by: userId, mode })
+    .select()
+    .single()
+
+  if (!error) return toSession(data)
+
+  const missingColumn = /column .*mode.* does not exist|schema cache/i.test(error.message)
+  if (!missingColumn) throw error
+
+  if (mode === 'quick') {
+    throw new Error(
+      'Le mode « Choisis pour nous » demande la migration V3 : colle supabase/schema.v3.sql dans le SQL Editor de Supabase, puis Run.',
+    )
+  }
+
+  const retry = await client()
     .from('sessions')
     .insert({ duo_id: duoId, created_by: userId })
     .select()
     .single()
-  if (error) throw error
-  return toSession(data)
+  if (retry.error) throw retry.error
+  return toSession(retry.data)
 }
 
 export async function latestSession(duoId: string): Promise<Session | null> {
@@ -348,4 +389,100 @@ export function useLiveSession(duoId: string | null, onSpin?: (p: SpinPayload) =
   }, [])
 
   return { session, progress, loading, refresh, sendSpin }
+}
+
+/* ------------------------------------------------------------------ avis */
+
+/**
+ * Avis d'une personne sur des films.
+ *
+ * Lisible par les membres de son duo : c'est ce qui permet à Venn de
+ * comprendre ce qui fonctionne pour vous DEUX, et pas seulement d'empiler
+ * deux profils individuels.
+ */
+export async function fetchRatings(userId: string): Promise<Record<string, Verdict>> {
+  const { data, error } = await client()
+    .from('ratings')
+    .select('movie_id, verdict')
+    .eq('user_id', userId)
+  if (error) throw error
+  return Object.fromEntries(
+    (data ?? []).map((r) => [r.movie_id as string, r.verdict as Verdict]),
+  )
+}
+
+export async function pushRating(
+  userId: string,
+  movieId: string,
+  verdict: Verdict,
+  source: 'quickstart' | 'after' | 'catalog' = 'catalog',
+  sessionId: string | null = null,
+) {
+  const { error } = await client()
+    .from('ratings')
+    .upsert(
+      {
+        user_id: userId,
+        movie_id: movieId,
+        verdict,
+        source,
+        session_id: sessionId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'user_id,movie_id' },
+    )
+  if (error) throw error
+}
+
+export async function pushRatings(userId: string, ratings: Record<string, Verdict>) {
+  const rows = Object.entries(ratings).map(([movie_id, verdict]) => ({
+    user_id: userId,
+    movie_id,
+    verdict,
+    source: 'catalog',
+    updated_at: new Date().toISOString(),
+  }))
+  if (!rows.length) return
+  const { error } = await client()
+    .from('ratings')
+    .upsert(rows, { onConflict: 'user_id,movie_id' })
+  if (error) throw error
+}
+
+/** Corrections manuelles du portrait, conservées avec le profil. */
+export async function pushAdjustments(userId: string, adjustments: Record<string, number>) {
+  const { error } = await client()
+    .from('profiles')
+    .update({ taste_adjustments: adjustments })
+    .eq('id', userId)
+  if (error) throw error
+}
+
+export async function fetchAdjustments(userId: string): Promise<Record<string, number>> {
+  const { data, error } = await client()
+    .from('profiles')
+    .select('taste_adjustments')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return (data?.taste_adjustments as Record<string, number>) ?? {}
+}
+
+/* -------------------------------------------------------- soirées passées */
+
+export interface PastNight {
+  sessionId: string
+  movieId: string
+  decidedAt: string
+}
+
+/** Films réellement retenus par le duo, du plus récent au plus ancien. */
+export async function duoHistory(duoId: string, limit = 12): Promise<PastNight[]> {
+  const { data, error } = await client().rpc('duo_history', { p_duo: duoId, p_limit: limit })
+  if (error) throw error
+  return (data ?? []).map((r: Record<string, unknown>) => ({
+    sessionId: r.session_id as string,
+    movieId: r.movie_id as string,
+    decidedAt: r.decided_at as string,
+  }))
 }

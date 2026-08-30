@@ -1,7 +1,7 @@
-# Venn — V2
+# Venn — V3
 
 Venn aide deux personnes à trouver rapidement quelque chose dont elles ont
-**toutes les deux** envie. La V2 couvre les films : 100 titres triés sur le
+**toutes les deux** envie. La V3 couvre les films : 100 titres triés sur le
 volet, 1990 → 2026.
 
 ```
@@ -18,6 +18,67 @@ Deux modes :
 - **Duo** — chacun dit ce dont il a envie de son côté, Venn croise, et la
   roulette ne tourne que dans le terrain commun. Nécessite Supabase
   ([mise en route](./supabase/SETUP.md)).
+
+## La règle d'or
+
+> **Le profil complète l'envie du soir. Il ne la contredit jamais.**
+
+Venn apprend vos goûts durables. Mais quelqu'un qui adore les thrillers peut
+très bien vouloir « un truc drôle et facile » un vendredi soir — et Venn doit
+l'écouter, pas lui rappeler ses habitudes.
+
+Cette règle n'est pas une intention, c'est une propriété du code
+(`src/movies/matching.ts`). Trois verrous :
+
+1. **Masquage par axe** — si la soirée nomme des humeurs, les humeurs
+   habituelles se taisent. Idem pour les genres. Le profil ne parle que là où
+   la soirée est muette.
+2. **Influence plus petite que le plus petit écart** — l'apport du profil est
+   calibré sur les écarts réellement présents dans le pool, de sorte que deux
+   apports opposés ne puissent en couvrir que 90 %. Un film qui correspond
+   moins à ce qui vient d'être demandé ne peut donc jamais passer devant.
+3. **Aucun effet sur la sélection** — le profil classe le pool, il ne décide
+   pas qui y entre.
+
+Vérifié par balayage : 1 024 configurations, 32 280 paires réellement
+départagées, **zéro inversion**, marge la plus serrée 7,2×.
+
+## Ce que Venn apprend
+
+| Signal | Poids | Pourquoi |
+| --- | --- | --- |
+| Avis après visionnage (😍 👍 😐 👎) | 1 | Quelqu'un a vu le film et le dit |
+| Favori | 0,55 | Fort, mais moins explicite |
+| Film retenu après une roulette | 0,30 | Un choix, pas un jugement |
+| Film vu | 0,12 | Vu ≠ aimé |
+| Roulette relancée | 0,08 | « Pas ce soir » plus souvent que « je déteste » |
+
+Les affinités sont mesurées **en écart à la moyenne de la personne**, jamais en
+volume : 62 des 100 films sont des drames, les compter ferait de tout le monde
+un amateur de drame. Et chaque affinité est rétrécie tant que les preuves
+manquent — un western adoré ne fait pas un amateur de westerns.
+
+Le portrait est visible et **corrigeable** dans Profil → « Ton ADN cinéma ».
+Ce que l'utilisateur corrige prime sur ce que Venn a déduit.
+
+## Le profil du duo
+
+Ce n'est pas la moyenne de deux profils. Ne comptent que les films sur lesquels
+les **deux** se sont prononcés, et c'est le moins enthousiaste des deux avis
+qui est retenu : un film adoré par l'un et détesté par l'autre n'est pas à
+moitié bon pour le duo, c'est un mauvais film pour le duo.
+
+## La roulette
+
+Elle reste centrale, mais elle a changé de rôle : elle ne tire plus au hasard
+parmi des films autorisés, elle départage des candidats que Venn juge déjà
+bons. Le tirage est pondéré (rapport ≈ 9 pour 1 entre le meilleur et le moins
+bon), et **aucun film du pool n'est inatteignable**.
+
+Environ un tirage sur sept est un **wildcard** : un film qui répond pleinement
+à l'envie du soir tout en sortant des habitudes du duo. Sans ça, Venn ne
+proposerait que ce qu'il sait déjà être aimé, et enfermerait les gens dans leur
+passé.
 
 ## Démarrer
 

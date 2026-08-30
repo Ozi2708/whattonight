@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { TabBar, type Tab } from './components/TabBar'
 import { RouletteScreen } from './components/RouletteScreen'
 import { CatalogScreen } from './components/CatalogScreen'
@@ -11,6 +11,8 @@ import { useLibrary, library } from './core/library'
 import { useNavigation } from './core/navigation'
 import { MOVIES_CATEGORY } from './core/categories'
 import { DuoScreen } from './components/DuoScreen'
+import { QuickTaste } from './components/QuickTaste'
+import { buildProfile, type Signals } from './movies/taste'
 import { initAccount, useAccount } from './core/account'
 import { isCloudConfigured } from './core/supabase'
 import { startLibrarySync, stopLibrarySync } from './core/librarySync'
@@ -47,7 +49,21 @@ export default function App() {
   const [result, setResult] = useState<Movie | null>(null)
   const [tonight, setTonight] = useState<Movie | null>(null)
 
-  const { seenSet, favoriteSet, history, lastPicked } = useLibrary(CATEGORY)
+  const { seenSet, favoriteSet, history, lastPicked, ratings, adjustments, chosen, refused } =
+    useLibrary(CATEGORY)
+
+  /**
+   * Tout ce que Venn a appris de moi, rassemblé en un seul objet.
+   *
+   * Il vit ici, au-dessus des onglets : le même portrait sert au profil
+   * (« Mes goûts ») et au croisement en duo. Deux calculs séparés finiraient
+   * par diverger, et Venn dirait une chose dans un onglet et une autre à côté.
+   */
+  const signals: Signals = useMemo(
+    () => ({ ratings, favorites: favoriteSet, seen: seenSet, chosen, refused, adjustments }),
+    [ratings, favoriteSet, seenSet, chosen, refused, adjustments],
+  )
+  const taste = useMemo(() => buildProfile(signals), [signals])
 
   const details = state.detailsId ? (MOVIES_BY_ID.get(state.detailsId) ?? null) : null
   const showDetails = state.sheet === 'details' && details !== null
@@ -78,6 +94,9 @@ export default function App() {
             seen={seenSet}
             favorites={favoriteSet}
             history={history}
+            signals={signals}
+            onRate={(id, verdict) => library.rate(CATEGORY, id, verdict)}
+            onRefuse={(id) => library.refuse(CATEGORY, id)}
             onOpenDetails={openDetails}
           />
         )}
@@ -107,7 +126,11 @@ export default function App() {
             seen={seenSet}
             favorites={favoriteSet}
             lastPicked={lastPicked}
+            taste={taste}
             onOpen={openDetails}
+            onDiscover={() => push({ ...state, sheet: 'quicktaste' })}
+            onAdjust={(key, value) => library.adjust(CATEGORY, key, value)}
+            onResetAdjustments={() => library.clearAdjustments(CATEGORY)}
           />
         )}
       </main>
@@ -122,8 +145,18 @@ export default function App() {
         matches={applyFilters(MOVIES, filters, seenSet).length}
       />
 
+      {state.sheet === 'quicktaste' && (
+        <QuickTaste
+          alreadyRated={new Set(Object.keys(ratings))}
+          onRate={(id, verdict) => library.rate(CATEGORY, id, verdict)}
+          onClose={back}
+        />
+      )}
+
       <MovieSheet
         movie={showDetails ? details : null}
+        verdict={details ? (ratings[details.id] ?? null) : null}
+        onRate={(verdict) => details && library.rate(CATEGORY, details.id, verdict)}
         onClose={back}
         seen={details ? seenSet.has(details.id) : false}
         favorite={details ? favoriteSet.has(details.id) : false}

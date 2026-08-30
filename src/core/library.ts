@@ -1,5 +1,5 @@
-import { useSyncExternalStore } from 'react'
-import type { CategoryId, CategoryState } from './types'
+import { useMemo, useSyncExternalStore } from 'react'
+import type { CategoryId, CategoryState, Verdict } from './types'
 
 /**
  * Bibliothèque de l'utilisateur (vus / favoris / historique), persistée en
@@ -10,10 +10,21 @@ import type { CategoryId, CategoryState } from './types'
 const KEY = 'venn/v1'
 const LEGACY_KEY = 'what-tonight/v1'
 const HISTORY_MAX = 20
+/** Les relances sont un signal faible : inutile d'en garder une archive. */
+const REFUSED_MAX = 50
 
 type Library = Record<string, CategoryState>
 
-const emptyCategory = (): CategoryState => ({ seen: [], favorites: [], history: [], lastPicked: null })
+const emptyCategory = (): CategoryState => ({
+  seen: [],
+  favorites: [],
+  history: [],
+  lastPicked: null,
+  ratings: {},
+  adjustments: {},
+  chosen: [],
+  refused: [],
+})
 
 function load(): Library {
   try {
@@ -69,12 +80,45 @@ export const readCategory = (category: CategoryId): CategoryState => read(catego
 
 export const library = {
   /** Fusion avec l'état distant : on garde l'union, jamais de perte. */
-  mergeRemote: (category: CategoryId, seen: string[], favorites: string[]) =>
+  mergeRemote: (
+    category: CategoryId,
+    seen: string[],
+    favorites: string[],
+    ratings: Record<string, Verdict> = {},
+  ) =>
     update(category, (c) => ({
       ...c,
       seen: [...new Set([...c.seen, ...seen])],
       favorites: [...new Set([...c.favorites, ...favorites])],
+      // Les avis distants ne remplacent jamais un avis local : celui-ci vient
+      // peut-être d'être donné et n'est pas encore remonté.
+      ratings: { ...ratings, ...(c.ratings ?? {}) },
     })),
+
+  /**
+   * Donner un avis vaut aussi « je l'ai vu » : personne ne juge un film qu'il
+   * n'a pas regardé, et le redemander séparément serait une corvée.
+   */
+  rate: (category: CategoryId, id: string, verdict: Verdict | null) =>
+    update(category, (c) => {
+      const ratings = { ...(c.ratings ?? {}) }
+      if (verdict) ratings[id] = verdict
+      else delete ratings[id]
+      return {
+        ...c,
+        ratings,
+        seen: verdict && !c.seen.includes(id) ? [...c.seen, id] : c.seen,
+      }
+    }),
+
+  /** Correction manuelle du portrait de goûts, dans [-1, 1]. */
+  adjust: (category: CategoryId, key: string, delta: number) =>
+    update(category, (c) => ({
+      ...c,
+      adjustments: { ...(c.adjustments ?? {}), [key]: Math.max(-1, Math.min(1, delta)) },
+    })),
+
+  clearAdjustments: (category: CategoryId) => update(category, (c) => ({ ...c, adjustments: {} })),
 
   toggleSeen: (category: CategoryId, id: string) =>
     update(category, (c) => ({ ...c, seen: toggleIn(c.seen, id) })),
@@ -95,8 +139,31 @@ export const library = {
       history: [id, ...c.history.filter((x) => x !== id)].slice(0, HISTORY_MAX),
     })),
 
-  /** « C'est parti » : le choix de la soirée. */
-  choose: (category: CategoryId, id: string) => update(category, (c) => ({ ...c, lastPicked: id })),
+  /**
+   * « C'est parti » : le choix de la soirée.
+   *
+   * On garde la liste complète, pas seulement le dernier : choisir un film
+   * après l'avoir vu passer est l'un des rares signaux que Venn obtienne sans
+   * rien demander.
+   */
+  choose: (category: CategoryId, id: string) =>
+    update(category, (c) => ({
+      ...c,
+      lastPicked: id,
+      chosen: [id, ...(c.chosen ?? []).filter((x) => x !== id)],
+    })),
+
+  /**
+   * Relance : le film affiché est écarté.
+   *
+   * Volontairement peu pesant côté moteur — relancer veut souvent dire « pas
+   * ce soir », pas « je déteste ». En faire un rejet franc apprendrait faux.
+   */
+  refuse: (category: CategoryId, id: string) =>
+    update(category, (c) => ({
+      ...c,
+      refused: [id, ...(c.refused ?? []).filter((x) => x !== id)].slice(0, REFUSED_MAX),
+    })),
 
   clearChoice: (category: CategoryId) => update(category, (c) => ({ ...c, lastPicked: null })),
 
@@ -112,9 +179,25 @@ export function useLibrary(category: CategoryId) {
     () => undefined,
   )
   const c = raw ?? emptyCategory()
+  // Mémoïsé : sans ça, chaque rendu fabriquerait de nouveaux Set, et tout ce
+  // qui en dépend — portrait de goûts, croisement des envies, pool — serait
+  // recalculé en boucle sans qu'aucune donnée n'ait changé.
+  const seenSet = useMemo(() => new Set(c.seen), [c.seen])
+  const favoriteSet = useMemo(() => new Set(c.favorites), [c.favorites])
+
   return {
     ...c,
-    seenSet: new Set(c.seen),
-    favoriteSet: new Set(c.favorites),
+    ratings: c.ratings ?? EMPTY_RATINGS,
+    adjustments: c.adjustments ?? EMPTY_ADJUSTMENTS,
+    chosen: c.chosen ?? EMPTY_LIST,
+    refused: c.refused ?? EMPTY_LIST,
+    seenSet,
+    favoriteSet,
   }
 }
+
+// Références stables pour les champs absents : `?? {}` fabriquerait un objet
+// neuf à chaque rendu, ce qui invaliderait les mémoïsations en aval.
+const EMPTY_RATINGS: Record<string, Verdict> = {}
+const EMPTY_ADJUSTMENTS: Record<string, number> = {}
+const EMPTY_LIST: string[] = []

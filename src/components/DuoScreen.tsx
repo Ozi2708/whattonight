@@ -7,7 +7,11 @@ import { RouletteScreen } from './RouletteScreen'
 import { Poster } from './Poster'
 import { IconCheck } from './icons'
 import { MOVIES, MOVIES_BY_ID, plural, type Movie } from '../movies/catalog'
-import { explain, match, matchLabel, type MatchResult, type Participant, type Relaxation, type Wishes } from '../movies/matching'
+import { explain, match, matchLabel, type MatchResult, type Participant, type Relaxation, type ScoredMovie, type Wishes } from '../movies/matching'
+import { buildDuoTaste, buildProfile, EMPTY_SIGNALS, type DuoTaste, type Signals, type TasteProfile } from '../movies/taste'
+import { QuickContext } from './QuickContext'
+import { FeedbackCard } from './FeedbackCard'
+import type { Verdict } from '../core/types'
 import { NO_FILTERS } from '../movies/filters'
 import { AVATARS, currentUserId, saveIdentity, useAccount } from '../core/account'
 import { friendlyError, isCloudConfigured } from '../core/supabase'
@@ -21,12 +25,16 @@ import {
   loadDuo,
   loadWishes,
   markSpinResult,
+  duoHistory,
+  fetchRatings,
+  pushRating,
   recordSignal,
   cancelSession,
   setSessionResult,
   submitWishes,
   useLiveSession,
   type Duo,
+  type SessionMode,
   type SpinPayload,
   type UserLibrary,
 } from '../core/duo'
@@ -35,6 +43,10 @@ interface Props {
   seen: Set<string>
   favorites: Set<string>
   history: string[]
+  /** Tout ce que Venn a appris de MOI — construit dans App à partir de la bibliothèque. */
+  signals: Signals
+  onRate: (movieId: string, verdict: Verdict) => void
+  onRefuse: (movieId: string) => void
   onOpenDetails: (m: Movie) => void
 }
 
@@ -44,14 +56,14 @@ interface Props {
  * Le fil conducteur reste celui de la V1 — ouvrir, tirer, regarder — avec une
  * seule étape ajoutée : chacun dit ce dont il a envie.
  */
-export function DuoScreen({ seen, favorites, history, onOpenDetails }: Props) {
+export function DuoScreen(props: Props) {
   const account = useAccount()
 
   if (!isCloudConfigured) return <CloudMissing />
   if (account.status === 'loading') return <Centered>Connexion…</Centered>
   if (!account.profile) return <Onboarding initialError={account.error} />
 
-  return <DuoFlow profile={account.profile} seen={seen} favorites={favorites} history={history} onOpenDetails={onOpenDetails} />
+  return <DuoFlow {...props} profile={account.profile} />
 }
 
 /* -------------------------------------------------------- états d'attente */
@@ -172,13 +184,12 @@ function DuoFlow({
   seen,
   favorites,
   history,
+  signals,
+  onRate,
+  onRefuse,
   onOpenDetails,
-}: {
+}: Props & {
   profile: { id: string; displayName: string; avatarEmoji: string; activeDuoId: string | null }
-  seen: Set<string>
-  favorites: Set<string>
-  history: string[]
-  onOpenDetails: (m: Movie) => void
 }) {
   const [duoId, setDuoId] = useState<string | null>(profile.activeDuoId)
   const [duo, setDuo] = useState<Duo | null>(null)
@@ -251,6 +262,9 @@ function DuoFlow({
       seen={seen}
       favorites={favorites}
       history={history}
+      signals={signals}
+      onRate={onRate}
+      onRefuse={onRefuse}
       onOpenDetails={onOpenDetails}
       onLeaveDuo={leave}
       remoteSpin={remoteSpin}
@@ -417,20 +431,19 @@ function DuoSession({
   seen,
   favorites,
   history,
+  signals,
+  onRate,
+  onRefuse,
   onOpenDetails,
   onLeaveDuo,
   remoteSpin,
   sendSpin,
-}: {
+}: Props & {
   profile: { id: string; displayName: string }
   duo: Duo
   session: ReturnType<typeof useLiveSession>['session']
   progress: ReturnType<typeof useLiveSession>['progress']
   refresh: () => Promise<void>
-  seen: Set<string>
-  favorites: Set<string>
-  history: string[]
-  onOpenDetails: (m: Movie) => void
   onLeaveDuo: () => void
   remoteSpin: SpinPayload | null
   sendSpin: (p: SpinPayload) => void
@@ -440,6 +453,10 @@ function DuoSession({
   const [phase, setPhase] = useState<Phase>('compat')
   const [wishes, setWishes] = useState<Record<string, Wishes> | null>(null)
   const [partnerLib, setPartnerLib] = useState<Record<string, UserLibrary>>({})
+  // Signaux de goûts de chacun, y compris les miens : c'est ce qui permet de
+  // construire un profil par personne PUIS le profil du duo.
+  const [tasteSignals, setTasteSignals] = useState<Record<string, Signals>>({})
+  const [nights, setNights] = useState<{ sessionId: string; movieId: string }[]>([])
   const [result, setResult] = useState<Movie | null>(null)
   const [tonight, setTonight] = useState<Movie | null>(null)
 
@@ -467,22 +484,45 @@ function DuoSession({
   const me = progress.find((p) => p.userId === profile.id)
   const ready = session?.status === 'ready' || session?.status === 'decided'
 
-  // Les envies ne descendent que lorsque les deux ont répondu : c'est la base
-  // qui l'impose, on ne fait ici que le refléter.
+  /**
+   * Goûts et historique du duo.
+   *
+   * Chargés dès que le duo existe, pas seulement pendant une soirée : le
+   * profil commun s'affiche sur l'écran d'accueil, et le retour « alors, ce
+   * film ? » doit pouvoir être posé avant toute nouvelle session.
+   */
   useEffect(() => {
-    if (!session || !ready) return
     let alive = true
     void (async () => {
       try {
-        const w = await loadWishes(session.id)
-        if (!alive) return
-        setWishes(w)
         const libs: Record<string, UserLibrary> = {}
+        const sig: Record<string, Signals> = {}
         for (const m of duo.members) {
-          libs[m.userId] =
-            m.userId === profile.id ? { seen, favorites } : await fetchLibrary(m.userId)
+          if (m.userId === profile.id) {
+            libs[m.userId] = { seen, favorites }
+            sig[m.userId] = signals
+          } else {
+            const [lib, ratings] = await Promise.all([
+              fetchLibrary(m.userId),
+              fetchRatings(m.userId).catch(() => ({})),
+            ])
+            libs[m.userId] = lib
+            sig[m.userId] = { ...EMPTY_SIGNALS, ...lib, ratings }
+          }
         }
-        if (alive) setPartnerLib(libs)
+        const past = await duoHistory(duo.id).catch(() => [])
+        if (!alive) return
+        setPartnerLib(libs)
+        // Un film retenu ensemble compte comme choisi par les deux.
+        const chosenTogether = past.map((n) => n.movieId)
+        for (const id of Object.keys(sig)) {
+          sig[id] = {
+            ...sig[id],
+            chosen: [...new Set([...sig[id].chosen, ...chosenTogether])],
+          }
+        }
+        setTasteSignals(sig)
+        setNights(past.map((n) => ({ sessionId: n.sessionId, movieId: n.movieId })))
       } catch (e) {
         if (alive) setError(friendlyError(e))
       }
@@ -492,7 +532,41 @@ function DuoSession({
     }
     // `seen`/`favorites` changent à chaque clic : on ne re-télécharge pas pour ça.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.id, ready, duo.members, profile.id])
+  }, [duo.id, duo.members, profile.id, session?.status])
+
+  // Les envies ne descendent que lorsque les deux ont répondu : c'est la base
+  // qui l'impose, on ne fait ici que le refléter.
+  useEffect(() => {
+    if (!session || !ready) return
+    let alive = true
+    void (async () => {
+      try {
+        const w = await loadWishes(session.id)
+        if (alive) setWishes(w)
+      } catch (e) {
+        if (alive) setError(friendlyError(e))
+      }
+    })()
+    return () => {
+      alive = false
+    }
+  }, [session?.id, ready])
+
+  /** Un portrait par personne, puis le portrait du duo. */
+  const tastes = useMemo(() => {
+    const out: Record<string, TasteProfile> = {}
+    for (const [id, sig] of Object.entries(tasteSignals)) out[id] = buildProfile(sig)
+    return out
+  }, [tasteSignals])
+
+  const duoTaste: DuoTaste | null = useMemo(() => {
+    const ids = duo.members.map((m) => m.userId)
+    if (ids.length < 2) return null
+    const a = tasteSignals[ids[0]]
+    const b = tasteSignals[ids[1]]
+    if (!a || !b) return null
+    return buildDuoTaste(a, b)
+  }, [tasteSignals, duo.members])
 
   const participants: Participant[] | null = useMemo(() => {
     if (!wishes) return null
@@ -502,8 +576,9 @@ function DuoSession({
       wishes: wishes[m.userId],
       seen: partnerLib[m.userId]?.seen ?? new Set<string>(),
       favorites: partnerLib[m.userId]?.favorites ?? new Set<string>(),
+      taste: tastes[m.userId] ?? null,
     }))
-  }, [wishes, duo.members, partnerLib])
+  }, [wishes, duo.members, partnerLib, tastes])
 
   const matchResult: MatchResult | null = useMemo(() => {
     if (!participants || participants.some((p) => !p.wishes)) return null
@@ -517,11 +592,11 @@ function DuoSession({
     [duo.members],
   )
 
-  const start = async () => {
+  const start = async (mode: SessionMode) => {
     setBusy(true)
     setError(null)
     try {
-      await createSession(duo.id, profile.id)
+      await createSession(duo.id, profile.id, mode)
       setPhase('compat')
       setWishes(null)
       setResult(null)
@@ -590,6 +665,27 @@ function DuoSession({
     if (movie) setResult(movie)
   }, [isHost, result, session?.resultMovieId, session?.status])
 
+  /**
+   * Film de la dernière soirée sur lequel je ne me suis pas encore prononcé.
+   * On ne demande qu'UN avis à la fois : une pile de questions à l'ouverture
+   * transformerait l'apprentissage en corvée, et plus personne ne répondrait.
+   */
+  const pendingFeedback = useMemo(() => {
+    const mine = signals.ratings
+    const night = nights.find((n) => !mine[n.movieId])
+    return night ? { ...night, movie: MOVIES_BY_ID.get(night.movieId) } : null
+  }, [nights, signals.ratings])
+
+  const answerFeedback = useCallback(
+    (movieId: string, verdict: Verdict, sessionId: string) => {
+      onRate(movieId, verdict)
+      void pushRating(profile.id, movieId, verdict, 'after', sessionId).catch(() => {})
+      // Répondre fait avancer la file : le film suivant sera proposé plus tard.
+      setNights((list) => list.filter((n) => n.movieId !== movieId))
+    },
+    [onRate, profile.id],
+  )
+
   const chooseMovie = useCallback(
     (movie: Movie | null) => {
       setTonight(movie)
@@ -612,6 +708,14 @@ function DuoSession({
         onStart={start}
         busy={busy}
         error={error}
+        duoTaste={duoTaste}
+        feedback={pendingFeedback?.movie ?? null}
+        onFeedback={(v) =>
+          pendingFeedback && answerFeedback(pendingFeedback.movieId, v, pendingFeedback.sessionId)
+        }
+        onSkipFeedback={() =>
+          setNights((list) => list.filter((n) => n.movieId !== pendingFeedback?.movieId))
+        }
         onOpenDetails={onOpenDetails}
         onLeaveDuo={onLeaveDuo}
       />
@@ -619,13 +723,12 @@ function DuoSession({
   }
 
   if (!me?.submitted) {
-    return (
-      <WishesForm
-        name={profile.displayName}
-        onSubmit={send}
-        busy={busy}
-        onCancel={restart}
-      />
+    // Le mode est porté par la session : l'invité voit le même formulaire que
+    // l'hôte, sans avoir eu à choisir quoi que ce soit.
+    return session.mode === 'quick' ? (
+      <QuickContext name={profile.displayName} onSubmit={send} busy={busy} onCancel={restart} />
+    ) : (
+      <WishesForm name={profile.displayName} onSubmit={send} busy={busy} onCancel={restart} />
     )
   }
 
@@ -675,10 +778,15 @@ function DuoSession({
       onChoose={chooseMovie}
       onOpenDetails={onOpenDetails}
       externalPool={pool}
+      poolWeights={new Map(matchResult.pool.map((sc) => [sc.movie.id, sc.score]))}
+      wildcards={new Set(matchResult.pool.filter((sc) => sc.wildcard).map((sc) => sc.movie.id))}
       eyebrow={duo.members.map((m) => m.displayName).join(' × ')}
       heading="Votre film de ce soir"
       ctaLabel="🎰 Trouver notre film"
-      onRefuse={(m) => recordSignal(profile.id, 'refused', { movieId: m.id })}
+      onRefuse={(m) => {
+        onRefuse(m.id)
+        recordSignal(profile.id, 'refused', { movieId: m.id })
+      }}
       onBack={() => setPhase('compat')}
       spectator={!isHost}
       hostName={host?.displayName}
@@ -691,7 +799,7 @@ function DuoSession({
       renderReasons={(movie) => {
         const scored = scoreById.get(movie.id)
         if (!scored || !participants) return null
-        return <Reasons scored={scored} participants={participants} />
+        return <Reasons scored={scored} participants={participants} duoTaste={duoTaste} />
       }}
     />
   )
@@ -700,19 +808,26 @@ function DuoSession({
 function Reasons({
   scored,
   participants,
+  duoTaste,
 }: {
-  scored: { score: number; movie: Movie }
+  scored: ScoredMovie
   participants: Participant[]
+  duoTaste: DuoTaste | null
 }) {
   const [open, setOpen] = useState(false)
-  const label = matchLabel(scored.score)
-  const reasons = explain(scored as never, participants)
+  const label = matchLabel(scored)
+  const reasons = explain(scored, participants, duoTaste)
 
   return (
     <div className="mt-3 w-full max-w-[22rem]">
       {label && (
-        <p className="text-[13px] font-semibold text-gold">
-          {label.percent}% · {label.text}
+        <p
+          className={`text-[13px] font-semibold ${
+            label.tone === 'violet' ? 'text-violet-300' : 'text-gold'
+          }`}
+        >
+          {label.tone === 'violet' ? '🃏 ' : ''}
+          {label.text}
         </p>
       )}
       <button
@@ -720,7 +835,7 @@ function Reasons({
         onClick={() => setOpen((v) => !v)}
         className="mt-1.5 text-[12.5px] text-muted underline-offset-4 hover:underline"
       >
-        {open ? 'Masquer' : 'Pourquoi ce choix ?'}
+        {open ? 'Masquer' : 'Pourquoi Venn ?'}
       </button>
       {open && (
         <motion.ul
@@ -749,15 +864,23 @@ function DuoHome({
   onStart,
   busy,
   error,
+  duoTaste,
+  feedback,
+  onFeedback,
+  onSkipFeedback,
   onOpenDetails,
   onLeaveDuo,
 }: {
   duo: Duo
   meId: string
   lastMovieId: string | null
-  onStart: () => void
+  onStart: (mode: SessionMode) => void
   busy: boolean
   error: string | null
+  duoTaste: DuoTaste | null
+  feedback: Movie | null
+  onFeedback: (v: Verdict) => void
+  onSkipFeedback: () => void
   onOpenDetails: (m: Movie) => void
   onLeaveDuo: () => void
 }) {
@@ -784,6 +907,49 @@ function DuoHome({
         Que regarde-t-on ce soir&nbsp;?
       </h1>
 
+      {/* L'avis passe avant la nouvelle soirée : c'est le moment où il est le
+          plus facile à donner, et c'est ce qui rend la suggestion suivante
+          meilleure. */}
+      {feedback && (
+        <div className="mt-7">
+          <FeedbackCard movie={feedback} onAnswer={onFeedback} onSkip={onSkipFeedback} />
+        </div>
+      )}
+
+      {/* Deux portes vers le même moteur : elles ne diffèrent que par la
+          quantité d'informations qu'on accepte de donner. */}
+      <div className="mx-auto mt-8 w-full max-w-sm space-y-3">
+        <button
+          type="button"
+          onClick={() => onStart('quick')}
+          disabled={busy}
+          className="w-full rounded-[22px] bg-gold px-5 py-[17px] text-left text-ink shadow-[0_10px_40px_-10px_var(--color-gold)] transition-transform active:scale-[0.98] disabled:opacity-50"
+        >
+          <span className="block text-[16px] font-bold tracking-tight">✨ Choisis pour nous</span>
+          <span className="mt-0.5 block text-[12.5px] font-medium text-ink/70">
+            Deux questions, Venn s’occupe du reste
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => onStart('precise')}
+          disabled={busy}
+          className="w-full rounded-[22px] border border-line bg-surface/70 px-5 py-[17px] text-left transition-transform active:scale-[0.98] disabled:opacity-50"
+        >
+          <span className="block text-[15.5px] font-semibold tracking-tight">
+            🎛️ On a une envie précise
+          </span>
+          <span className="mt-0.5 block text-[12.5px] text-muted">
+            Chacun dit ce qu’il veut et ce qu’il refuse
+          </span>
+        </button>
+      </div>
+
+      {error && <p className="mt-4 text-[13px] text-rose-300">{error}</p>}
+
+      {duoTaste && duoTaste.depth !== 'vierge' && <DuoTasteCard taste={duoTaste} />}
+
       {last && (
         <button
           type="button"
@@ -807,23 +973,68 @@ function DuoHome({
 
       <button
         type="button"
-        onClick={onStart}
-        disabled={busy}
-        className="mx-auto mt-8 w-full max-w-sm rounded-[22px] bg-gold py-[18px] text-[16px] font-bold tracking-tight text-ink shadow-[0_10px_40px_-10px_var(--color-gold)] transition-transform active:scale-[0.98] disabled:opacity-50"
-      >
-        {busy ? 'Un instant…' : 'Choisir notre film'}
-      </button>
-
-      {error && <p className="mt-4 text-[13px] text-rose-300">{error}</p>}
-
-      <button
-        type="button"
         onClick={onLeaveDuo}
         className="mx-auto mt-8 text-[13px] text-muted underline-offset-4 hover:text-cream hover:underline"
       >
         Changer de duo
       </button>
     </div>
+  )
+}
+
+/**
+ * « Votre Venn » — ce qui marche pour ces deux personnes ENSEMBLE.
+ *
+ * Ce n'est pas la moyenne de deux profils : ne comptent que les films sur
+ * lesquels les deux se sont prononcés. C'est peu de matière au début, et c'est
+ * assumé — mieux vaut une carte qui apparaît tard qu'une carte qui invente.
+ */
+function DuoTasteCard({ taste }: { taste: DuoTaste }) {
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mx-auto mt-8 w-full max-w-sm rounded-3xl border border-line bg-surface/45 p-5 text-left"
+    >
+      <h2 className="text-[15px] font-semibold">Votre Venn</h2>
+      <p className="mt-0.5 text-[11.5px] text-muted">{taste.depthLabel}</p>
+
+      {taste.sentences.length > 0 ? (
+        <ul className="mt-3 space-y-1.5">
+          {taste.sentences.map((line) => (
+            <li key={line} className="flex gap-2 text-[13px] leading-snug text-cream/75">
+              <IconCheck className="mt-0.5 h-3.5! w-3.5! shrink-0 text-gold" />
+              {line}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 text-[13px] leading-relaxed text-muted">
+          Encore quelques avis après vos soirées et Venn comprendra ce qui vous
+          va à tous les deux.
+        </p>
+      )}
+
+      {taste.agreements.length > 0 && (
+        <>
+          <p className="mt-4 text-[11.5px] font-semibold tracking-wide text-muted uppercase">
+            Vos accords
+          </p>
+          <ul className="mt-2 flex gap-2">
+            {taste.agreements.slice(0, 5).map((m) => (
+              <li key={m.id} className="w-11 shrink-0">
+                <Poster
+                  src={m.posterSmall ?? m.image}
+                  alt={m.title}
+                  className="w-full rounded-md border border-white/10"
+                  style={{ aspectRatio: '2 / 3' }}
+                />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </motion.section>
   )
 }
 

@@ -1,5 +1,5 @@
 import { library, readCategory, subscribeLibrary } from './library'
-import { fetchLibrary, pushLibrary } from './duo'
+import { fetchAdjustments, fetchLibrary, fetchRatings, pushAdjustments, pushLibrary, pushRatings } from './duo'
 import { supabase } from './supabase'
 import { MOVIES_CATEGORY } from './categories'
 
@@ -24,15 +24,24 @@ export async function startLibrarySync(userId: string) {
   stopLibrarySync()
 
   try {
-    const remote = await fetchLibrary(userId)
-    library.mergeRemote(CATEGORY, [...remote.seen], [...remote.favorites])
+    const [remote, ratings] = await Promise.all([fetchLibrary(userId), fetchRatings(userId)])
+    library.mergeRemote(CATEGORY, [...remote.seen], [...remote.favorites], ratings)
   } catch {
     // Hors ligne ou politique refusée : on continue en local, sans bruit.
+  }
+
+  try {
+    const adjustments = await fetchAdjustments(userId)
+    for (const [key, value] of Object.entries(adjustments)) library.adjust(CATEGORY, key, value)
+  } catch {
+    /* La table peut ne pas encore porter la colonne : sans conséquence. */
   }
 
   const flush = () => {
     const c = readCategory(CATEGORY)
     void pushLibrary(userId, c.seen, c.favorites).catch(() => {})
+    void pushRatings(userId, c.ratings ?? {}).catch(() => {})
+    void pushAdjustments(userId, c.adjustments ?? {}).catch(() => {})
   }
 
   flush()

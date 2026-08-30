@@ -23,6 +23,15 @@ export interface Category {
   available: boolean
 }
 
+/**
+ * Avis explicite sur un titre.
+ *
+ * C'est le signal le plus fort dont dispose Venn : il vient d'une personne qui
+ * a vu le film et qui prend la peine de le dire. Tout le reste — favoris,
+ * choix, relances — pèse beaucoup moins.
+ */
+export type Verdict = 'loved' | 'liked' | 'meh' | 'disliked'
+
 /** État persisté pour une catégorie donnée. */
 export interface CategoryState {
   seen: string[]
@@ -30,4 +39,15 @@ export interface CategoryState {
   /** Derniers tirages, du plus récent au plus ancien (anti-répétition). */
   history: string[]
   lastPicked: string | null
+  /** Avis explicites, par identifiant de titre. */
+  ratings?: Record<string, Verdict>
+  /** Titres réellement retenus après un tirage — un signal fort. */
+  chosen?: string[]
+  /** Titres relancés — signal faible, borné, assumé comme tel. */
+  refused?: string[]
+  /**
+   * Corrections apportées par l'utilisateur à son portrait (« Ajuster »).
+   * Clé = genre ou humeur, valeur = décalage dans [-1, 1].
+   */
+  adjustments?: Record<string, number>
 }

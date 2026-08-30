@@ -6,7 +6,7 @@ import { Chip } from './Chip'
 import { IconCheck, IconHeart, IconRefresh, IconSliders, IconStar } from './icons'
 import { MOVIES, MOVIES_BY_ID, formatRuntime, type Movie } from '../movies/catalog'
 import { applyFilters, countActive, type Filters } from '../movies/filters'
-import { pickNext, shuffle } from '../core/picker'
+import { pickNext, pickWeighted, shuffle } from '../core/picker'
 import { library } from '../core/library'
 import { MOVIES_CATEGORY } from '../core/categories'
 
@@ -14,6 +14,14 @@ import { MOVIES_CATEGORY } from '../core/categories'
 const STRIP_LENGTH = 34
 const WINNER_AT = 29
 const STRIP_UNIQUE = 12
+/**
+ * Part des tirages volontairement décalés.
+ *
+ * Assez rare pour que Venn reste fiable, assez fréquent pour qu'il ne finisse
+ * pas par ne proposer que ce qu'il sait déjà être aimé. Une application qui ne
+ * confirme que les habitudes enferme ses utilisateurs dans leur passé.
+ */
+const WILDCARD_RATE = 0.15
 
 interface Props {
   filters: Filters
@@ -34,6 +42,14 @@ interface Props {
    * été exprimées par les deux personnes.
    */
   externalPool?: Movie[]
+  /**
+   * Poids de tirage par identifiant, dans [0,1]. En duo, c'est le score de
+   * compatibilité : la roulette ne tire plus au hasard parmi des films
+   * autorisés, elle départage des candidats que Venn juge déjà bons.
+   */
+  poolWeights?: Map<string, number>
+  /** Films volontairement décalés — tirés de temps en temps. */
+  wildcards?: Set<string>
   eyebrow?: string
   heading?: string
   ctaLabel?: string
@@ -72,6 +88,8 @@ export function RouletteScreen({
   onChoose,
   onOpenDetails,
   externalPool,
+  poolWeights,
+  wildcards,
   eyebrow = 'Venn',
   heading,
   ctaLabel,
@@ -93,12 +111,24 @@ export function RouletteScreen({
   const activeCount = countActive(filters)
 
   const spin = useCallback(() => {
-    const winner = pickNext(pool, history)
+    // En solo, tirage uniforme : les filtres ont déjà tout dit, rien ne permet
+    // de préférer un film à un autre. En duo, Venn a classé les candidats —
+    // ignorer ce classement reviendrait à jeter son travail.
+    const winner = poolWeights
+      ? pickWeighted(
+          pool.map((m) => ({ ...m, weight: poolWeights.get(m.id) ?? 0.5 })),
+          history,
+          WILDCARD_RATE,
+          (m) => wildcards?.has(m.id) ?? false,
+        )
+      : pickNext(pool, history)
     if (!winner) return
 
     const base = shuffle(pool).slice(0, Math.min(STRIP_UNIQUE, pool.length))
     const next = Array.from({ length: STRIP_LENGTH }, (_, i) => base[i % base.length])
-    next[WINNER_AT] = winner
+    // `winner` peut porter le champ `weight` ajouté ci-dessus : on repasse par
+    // le catalogue pour ne garder qu'un Movie propre dans la bande.
+    next[WINNER_AT] = MOVIES_BY_ID.get(winner.id) ?? pool[0]
 
     library.remember(MOVIES_CATEGORY.id, winner.id)
     onChoose(null)
@@ -106,7 +136,7 @@ export function RouletteScreen({
     setStrip(next)
     setPhase('spinning')
     onSpinStart?.(next, WINNER_AT)
-  }, [pool, history, onChoose, onResult, onSpinStart])
+  }, [pool, poolWeights, wildcards, history, onChoose, onResult, onSpinStart])
 
   // Côté spectateur : on rejoue la bande exacte de l'hôte, pas un tirage local.
   useEffect(() => {

@@ -2,16 +2,27 @@ import { Sheet } from './Sheet'
 import { Poster } from './Poster'
 import { IconCheck, IconHeart, IconStar } from './icons'
 import { formatRuntime, type Movie } from '../movies/catalog'
+import type { Verdict } from '../core/types'
 
 interface Props {
   movie: Movie | null
   onClose: () => void
   seen: boolean
   favorite: boolean
+  /** Avis déjà donné, ou `null`. */
+  verdict: Verdict | null
+  onRate: (verdict: Verdict) => void
   onToggleSeen: () => void
   onToggleFavorite: () => void
   onPlay: () => void
 }
+
+const VERDICTS: { id: Verdict; emoji: string; label: string }[] = [
+  { id: 'loved', emoji: '😍', label: 'Adoré' },
+  { id: 'liked', emoji: '👍', label: 'Aimé' },
+  { id: 'meh', emoji: '😐', label: 'Bof' },
+  { id: 'disliked', emoji: '👎', label: 'Non' },
+]
 
 /** Fiche film : rapide à lire, l'affiche fait le gros du travail. */
 export function MovieSheet({
@@ -19,6 +30,8 @@ export function MovieSheet({
   onClose,
   seen,
   favorite,
+  verdict,
+  onRate,
   onToggleSeen,
   onToggleFavorite,
   onPlay,
@@ -85,6 +98,36 @@ export function MovieSheet({
 
             {movie.overview && (
               <p className="mt-4 text-[14px] leading-relaxed text-cream/75">{movie.overview}</p>
+            )}
+
+            {/* L'avis est proposé dès que le film est vu : c'est le moment où
+                la personne y pense, et un tap suffit. Rien n'oblige à répondre. */}
+            {seen && (
+              <div className="mt-6">
+                <p className="text-[12px] font-semibold tracking-wide text-muted uppercase">
+                  Tu en as pensé quoi&nbsp;?
+                </p>
+                <div className="mt-2.5 grid grid-cols-4 gap-2">
+                  {VERDICTS.map((v) => (
+                    <button
+                      key={v.id}
+                      type="button"
+                      onClick={() => onRate(v.id)}
+                      aria-pressed={verdict === v.id}
+                      className={`flex flex-col items-center gap-1 rounded-2xl border py-2.5 text-[10.5px] font-medium transition-colors ${
+                        verdict === v.id
+                          ? 'border-gold bg-gold/15 text-gold'
+                          : 'border-line bg-surface text-cream/70'
+                      }`}
+                    >
+                      <span className="text-[19px]" aria-hidden>
+                        {v.emoji}
+                      </span>
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
 
             <div className="mt-6 grid grid-cols-2 gap-2.5">

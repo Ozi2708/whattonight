@@ -1,6 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Poster } from './Poster'
-import { IconCheck, IconHeart } from './icons'
+import { SeenStamp } from './SeenStamp'
+import { IconHeart } from './icons'
 import { MOVIES, type Movie } from '../movies/catalog'
 
 type View = 'all' | 'todo' | 'seen' | 'favorites'
@@ -18,8 +19,31 @@ interface Props {
   onOpen: (m: Movie) => void
 }
 
+/** Petite phrase de progression. Jamais de points ni de badges : une collection. */
+function milestone(count: number, total: number): string {
+  if (count === 0) return 'La collection est vierge.'
+  if (count === total) return 'Collection complète. Rien que ça.'
+  if (count >= total * 0.75) return `Plus que ${total - count} et la liste est bouclée.`
+  if (count >= total * 0.4) return 'La collection prend forme.'
+  if (count >= total * 0.15) return 'Ça se remplit.'
+  return `${total - count} affiches encore vierges.`
+}
+
 export function CatalogScreen({ seen, favorites, onOpen }: Props) {
   const [view, setView] = useState<View>('all')
+
+  // On n'anime le tampon que sur les films qui VIENNENT d'être marqués.
+  // Animer toute la grille à chaque rendu donnerait un écran nerveux et
+  // ferait perdre l'information : c'est le changement qui doit sauter aux yeux.
+  const known = useRef<Set<string> | null>(null)
+  const [freshlySeen, setFreshlySeen] = useState<Set<string>>(new Set())
+  useEffect(() => {
+    const previous = known.current
+    known.current = new Set(seen)
+    if (!previous) return
+    const added = [...seen].filter((id) => !previous.has(id))
+    if (added.length) setFreshlySeen(new Set(added))
+  }, [seen])
 
   const movies = useMemo(() => {
     switch (view) {
@@ -57,6 +81,7 @@ export function CatalogScreen({ seen, favorites, onOpen }: Props) {
               style={{ width: `${progress}%` }}
             />
           </div>
+          <p className="mt-2 text-[12.5px] text-muted">{milestone(seen.size, MOVIES.length)}</p>
         </div>
       </header>
 
@@ -84,44 +109,51 @@ export function CatalogScreen({ seen, favorites, onOpen }: Props) {
         </p>
       ) : (
         <ul className="mt-5 grid grid-cols-3 gap-2.5">
-          {movies.map((m) => (
-            <li key={m.id}>
-              <button
-                type="button"
-                onClick={() => onOpen(m)}
-                className="group relative block w-full text-left"
-              >
-                <Poster
-                  src={m.posterSmall ?? m.image}
-                  alt={m.title}
-                  className={`w-full rounded-xl border border-white/10 transition-opacity ${
-                    seen.has(m.id) ? 'opacity-55' : ''
-                  }`}
-                  style={{ aspectRatio: '2 / 3' }}
-                />
+          {movies.map((m) => {
+            const isSeen = seen.has(m.id)
+            return (
+              <li key={m.id}>
+                <button
+                  type="button"
+                  onClick={() => onOpen(m)}
+                  className="group block w-full text-left"
+                >
+                  <span className="relative block overflow-hidden rounded-xl border border-white/10">
+                    <Poster
+                      src={m.posterSmall ?? m.image}
+                      alt={m.title}
+                      className={`w-full transition-[filter] duration-500 ${
+                        // Assombri et désaturé : l'affiche reste reconnaissable,
+                        // mais recule visuellement derrière le tampon.
+                        isSeen ? 'brightness-[0.42] saturate-[0.55]' : ''
+                      }`}
+                      style={{ aspectRatio: '2 / 3' }}
+                    />
 
-                {seen.has(m.id) && (
-                  <span
-                    className="absolute top-1.5 left-1.5 grid h-6 w-6 place-items-center rounded-full bg-gold text-ink shadow-lg"
-                    aria-label="Déjà vu"
-                  >
-                    <IconCheck className="h-3.5! w-3.5!" />
-                  </span>
-                )}
-                {favorites.has(m.id) && (
-                  <span
-                    className="absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/60 text-gold backdrop-blur"
-                    aria-label="Favori"
-                  >
-                    <IconHeart className="h-3.5! w-3.5!" filled />
-                  </span>
-                )}
+                    {isSeen && <SeenStamp animate={freshlySeen.has(m.id)} />}
 
-                <p className="mt-1.5 truncate text-[11.5px] font-medium text-cream/80">{m.title}</p>
-                <p className="text-[11px] text-muted">{m.year}</p>
-              </button>
-            </li>
-          ))}
+                    {favorites.has(m.id) && (
+                      <span
+                        className="absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/65 text-gold backdrop-blur"
+                        aria-label="Favori"
+                      >
+                        <IconHeart className="h-3.5! w-3.5!" filled />
+                      </span>
+                    )}
+                  </span>
+
+                  <p
+                    className={`mt-1.5 truncate text-[11.5px] font-medium ${
+                      isSeen ? 'text-cream/45' : 'text-cream/80'
+                    }`}
+                  >
+                    {m.title}
+                  </p>
+                  <p className="text-[11px] text-muted">{m.year}</p>
+                </button>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

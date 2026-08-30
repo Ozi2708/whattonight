@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 export interface NavState<Tab extends string> {
   tab: Tab
-  sheet: 'filters' | 'details' | null
+  sheet: 'filters' | 'details' | 'quicktaste' | null
   /** Élément affiché quand `sheet === 'details'`. */
   detailsId: string | null
 }

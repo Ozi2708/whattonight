@@ -1,4 +1,5 @@
 import { decadeOf, elide, genreWithArticle, moodAdjective, type Movie } from './catalog'
+import type { DuoTaste, TasteProfile } from './taste'
 
 /**
  * Le moteur de Venn : croiser deux envies pour en tirer un terrain commun.
@@ -47,6 +48,8 @@ export interface Participant {
   wishes: Wishes
   seen: Set<string>
   favorites: Set<string>
+  /** Goûts durables. Complète l'envie du soir ; ne la contredit jamais. */
+  taste?: TasteProfile | null
 }
 
 export interface ScoredMovie {
@@ -55,6 +58,22 @@ export interface ScoredMovie {
   score: number
   /** Score individuel, par `userId`. Sert à expliquer le résultat. */
   perUser: Record<string, number>
+  /**
+   * Part du score due à la seule envie du soir, sans les profils. C'est elle,
+   * et elle seule, qui décide de l'appartenance au pool — les goûts durables
+   * ne peuvent que réordonner ce que la soirée a déjà validé.
+   */
+  tonight: number
+  /**
+   * Avis des goûts durables sur ce film, dans [-1, 1]. Valeur brute : ce que
+   * Venn en pense, indépendamment du poids qu'on lui accorde ensuite.
+   */
+  profile: number
+  /**
+   * Bon pour ce soir, mais en dehors des habitudes du duo. Proposé de temps en
+   * temps pour éviter d'enfermer les gens dans ce qu'ils connaissent déjà.
+   */
+  wildcard: boolean
 }
 
 export interface Funnel {
@@ -133,7 +152,8 @@ function axisScore(wanted: string[], actual: string[]): number | null {
   return Math.min(1, 0.75 + 0.25 * (hits - 1))
 }
 
-function scoreFor(movie: Movie, p: Participant): number {
+/** Score de l'envie du soir seule — le profil n'y entre pas. */
+function tonightScore(movie: Movie, p: Participant): number {
   const { preferences: pref } = p.wishes
   if (pref.surprise) return NEUTRAL
 
@@ -149,6 +169,91 @@ function scoreFor(movie: Movie, p: Participant): number {
   // Les favoris pèsent, mais ne peuvent pas faire gagner un film à eux seuls :
   // le bonus est trop petit pour rattraper un mauvais score.
   return Math.min(1, base + (p.favorites.has(movie.id) ? 0.06 : 0))
+}
+
+/**
+ * LA RÈGLE D'OR, EN CODE.
+ *
+ *   « Le profil complète l'envie du soir. Il ne la contredit jamais. »
+ *
+ * Trois verrous.
+ *
+ * 1. MASQUAGE PAR AXE. Si la personne a nommé des humeurs ce soir, ses
+ *    humeurs habituelles sont ignorées ; idem pour les genres. Le profil ne
+ *    parle QUE là où la soirée est muette. Quelqu'un qui aime les thrillers et
+ *    demande une comédie n'obtiendra donc jamais un thriller « parce qu'il
+ *    aime ça d'habitude ».
+ *
+ * 2. INFLUENCE PLUS PETITE QUE LE PLUS PETIT ÉCART (cf. `profileScale`).
+ *
+ * 3. AUCUN EFFET SUR LA SÉLECTION. Le profil ne décide pas qui entre dans le
+ *    pool, seulement dans quel ordre (cf. `buildPool`).
+ */
+
+/** Plafond absolu de l'influence du profil, quels que soient les écarts. */
+const PROFILE_WEIGHT = 0.12
+
+/**
+ * Échelle appliquée au profil, calculée sur le pool lui-même.
+ *
+ * Le verrou 2 avait d'abord été posé sur une constante « plus petite que le
+ * plus petit écart ». C'était faux d'un facteur deux : ce qui sépare deux
+ * films, c'est la DIFFÉRENCE de leurs apports de profil, donc jusqu'au double
+ * du plafond. Un balayage de 24 000 paires a sorti 154 inversions — des films
+ * remontés au-dessus d'autres qui correspondaient pourtant mieux à ce qui
+ * venait d'être demandé.
+ *
+ * On calcule donc l'échelle à partir du plus petit écart réellement présent :
+ * deux apports opposés ne peuvent alors couvrir que 90 % de cet écart. La
+ * garantie ne dépend plus d'un réglage heureux, elle tient par construction.
+ */
+function profileScale(tonights: number[]): number {
+  const distinct = [...new Set(tonights)].sort((a, b) => a - b)
+  let smallest = Infinity
+  for (let i = 1; i < distinct.length; i++) {
+    smallest = Math.min(smallest, distinct[i] - distinct[i - 1])
+  }
+  // Tous à égalité : rien à contredire, le profil peut trancher librement.
+  if (!Number.isFinite(smallest)) return PROFILE_WEIGHT
+  // 0.45 × écart : deux apports opposés valent au plus 0.9 × écart.
+  return Math.min(PROFILE_WEIGHT, 0.45 * smallest)
+}
+
+/**
+ * Renvoie `null` quand Venn n'a rien à dire sur ce film pour cette personne.
+ *
+ * Distinction essentielle : « je ne sais pas » n'est pas « ça m'est égal ». En
+ * renvoyant 0 pour un profil vide, le `min` du score de duo ramenait tout à
+ * zéro dès qu'une des deux personnes était nouvelle — c'est-à-dire presque
+ * toujours au début — et le profil de l'autre ne servait plus à rien.
+ */
+function profileValue(movie: Movie, p: Participant): number | null {
+  const taste = p.taste
+  if (!taste) return null
+  const { preferences: pref } = p.wishes
+  // « Surprends-moi » est une demande explicite de sortir des sentiers battus :
+  // rappeler ses habitudes irait contre ce qui vient d'être demandé.
+  if (pref.surprise) return null
+
+  const parts: number[] = []
+
+  // Verrou 1 : chaque axe se tait dès que la soirée s'est exprimée dessus.
+  if (pref.genres.length === 0) {
+    for (const g of movie.genres) {
+      const hit = taste.genres.find((a) => a.key === g)
+      if (hit) parts.push(hit.score)
+    }
+  }
+  if (pref.moods.length === 0) {
+    for (const m of movie.moods) {
+      const hit = taste.moods.find((a) => a.key === m)
+      if (hit) parts.push(hit.score)
+    }
+  }
+
+  if (!parts.length) return null
+  const mean = parts.reduce((a, b) => a + b, 0) / parts.length
+  return Math.max(-1, Math.min(1, mean))
 }
 
 /**
@@ -227,18 +332,76 @@ function buildPool(
   participants: Participant[],
   rnd: () => number,
 ): ScoredMovie[] {
-  const scored: ScoredMovie[] = shuffle(eligible, rnd)
-    .map((movie) => {
-      const perUser: Record<string, number> = {}
-      for (const p of participants) perUser[p.userId] = scoreFor(movie, p)
-      return { movie, score: pairScore(Object.values(perUser)), perUser }
-    })
+  const raw = shuffle(eligible, rnd).map((movie) => {
+    const perUser: Record<string, number> = {}
+    const profiles: number[] = []
+    for (const p of participants) {
+      perUser[p.userId] = tonightScore(movie, p)
+      const value = profileValue(movie, p)
+      // Seuls ceux sur qui Venn a une opinion entrent dans le calcul.
+      if (value !== null) profiles.push(value)
+    }
+    return {
+      movie,
+      perUser,
+      tonight: pairScore(Object.values(perUser)),
+      // Le profil du duo se lit comme celui d'une personne : c'est le moins
+      // bien servi qui commande, pas la moyenne.
+      profile: pairSigned(profiles),
+    }
+  })
+
+  const scale = profileScale(raw.map((r) => r.tonight))
+
+  const scored: ScoredMovie[] = raw
+    .map((r) => ({
+      ...r,
+      score: Math.max(0, Math.min(1, r.tonight + scale * r.profile)),
+      wildcard: false,
+    }))
     .sort((a, b) => b.score - a.score)
 
-  // Une préférence n'élimine jamais : si le seuil est trop sélectif, on garde
-  // quand même les meilleurs plutôt que de renvoyer une liste vide.
-  const pool = scored.filter((s) => s.score >= THRESHOLD)
-  return pool.length >= POOL_MIN ? pool : scored.slice(0, Math.min(POOL_MIN, scored.length))
+  // Verrou 3 de la règle d'or : l'appartenance au pool se décide sur la SEULE
+  // envie du soir. Les goûts durables réordonnent, ils n'ouvrent ni ne ferment
+  // la porte — sinon une habitude pourrait écarter ce qui vient d'être demandé.
+  const pool = scored.filter((s) => s.tonight >= THRESHOLD)
+  const chosen =
+    pool.length >= POOL_MIN
+      ? pool
+      : [...scored].sort((a, b) => b.tonight - a.tonight).slice(0, Math.min(POOL_MIN, scored.length))
+
+  return markWildcards(chosen)
+}
+
+/**
+ * Moyenne signée « à la Venn » : dominée par la personne la moins servie.
+ * Un film que l'un adore et que l'autre fuit n'est pas un demi-bon film.
+ */
+function pairSigned(values: number[]): number {
+  if (!values.length) return 0
+  const min = Math.min(...values)
+  const mean = values.reduce((a, b) => a + b, 0) / values.length
+  return 0.65 * min + 0.35 * mean
+}
+
+/**
+ * Les wildcards.
+ *
+ * Un wildcard n'est PAS un mauvais film qu'on glisse au hasard : c'est un film
+ * qui répond pleinement à l'envie du soir tout en sortant des habitudes du
+ * duo. Sans ça, Venn ne proposerait éternellement que ce qu'il sait déjà être
+ * aimé, et enfermerait les gens dans leur propre passé.
+ */
+function markWildcards(pool: ScoredMovie[]): ScoredMovie[] {
+  if (pool.length < 6) return pool
+  const tonights = pool.map((s) => s.tonight).sort((a, b) => a - b)
+  const medianTonight = tonights[Math.floor(tonights.length / 2)]
+
+  return pool.map((s) => ({
+    ...s,
+    // Bon pour ce soir, mais en dehors de ce que le duo choisit d'habitude.
+    wildcard: s.tonight >= medianTonight && s.profile < -0.05,
+  }))
 }
 
 /* --------------------------------------------------------- terrain commun */
@@ -400,9 +563,19 @@ export function match(movies: Movie[], participants: Participant[], seed = ''): 
  * remplissage. Une explication fausse coûte plus cher qu'une explication
  * absente.
  */
-export function explain(scored: ScoredMovie, participants: Participant[]): string[] {
+export function explain(
+  scored: ScoredMovie,
+  participants: Participant[],
+  duoTaste?: DuoTaste | null,
+): string[] {
   const { movie } = scored
   const reasons: string[] = []
+
+  // Le wildcard s'annonce d'abord : c'est une proposition volontairement
+  // décalée, et la présenter comme une évidence serait malhonnête.
+  if (scored.wildcard) {
+    reasons.push('Un peu à côté de vos habitudes — Venn tente le coup')
+  }
 
   const sharedGenres = movie.genres.filter((g) =>
     participants.every((p) => p.wishes.preferences.surprise || p.wishes.preferences.genres.includes(g)),
@@ -440,17 +613,47 @@ export function explain(scored: ScoredMovie, participants: Participant[]): strin
     reasons.push('Aucun de vous ne l’a vu')
   }
 
+  // Ce que le duo a déjà aimé ensemble. Uniquement si c'est vrai et vérifiable :
+  // il faut un genre partagé ET des films réellement notés par les deux.
+  if (duoTaste && duoTaste.agreements.length >= 2) {
+    const shared = movie.genres.find((g) =>
+      duoTaste.genres.some((a) => a.key === g && a.score >= 0.12),
+    )
+    if (shared) {
+      reasons.push(`Vous avez déjà aimé ${genreWithArticle(shared)} ensemble`)
+    }
+  }
+
+  // Les goûts durables ne sont invoqués que là où la soirée n'a rien imposé —
+  // le même verrou que dans le calcul, répété dans l'explication.
+  for (const p of participants) {
+    if (p.wishes.preferences.surprise || !p.taste) continue
+    if (p.wishes.preferences.moods.length) continue
+    const mood = movie.moods.find((m) =>
+      p.taste!.moods.some((a) => a.key === m && a.score >= 0.2),
+    )
+    if (mood) {
+      reasons.push(`${p.name} aime généralement ce qui est ${moodAdjective(mood)}`)
+      break
+    }
+  }
+
   return reasons.slice(0, 5)
 }
 
 /**
- * Le pourcentage n'est affiché que s'il veut dire quelque chose. En dessous,
- * mieux vaut ne rien annoncer qu'une fausse précision.
+ * Le degré de correspondance, en mots.
+ *
+ * La V2 affichait « 63 % · Match correct ». Deux chiffres significatifs
+ * suggéraient une mesure ; il n'y en a pas. Le score est un classement, pas une
+ * probabilité de plaire — l'afficher au pour cent près, c'était habiller une
+ * intuition en résultat scientifique. Ne restent que des paliers assumés, et
+ * rien du tout quand le film n'est qu'un choix acceptable de plus.
  */
-export function matchLabel(score: number): { percent: number; text: string } | null {
-  if (score < 0.6) return null
-  return {
-    percent: Math.round(score * 100),
-    text: score >= 0.85 ? 'Excellent match' : score >= 0.7 ? 'Bon match' : 'Match correct',
-  }
+export function matchLabel(scored: ScoredMovie): { text: string; tone: 'gold' | 'violet' } | null {
+  if (scored.wildcard) return { text: 'Wildcard', tone: 'violet' }
+  if (scored.score >= 0.85) return { text: 'Perfect match', tone: 'gold' }
+  if (scored.score >= 0.72) return { text: 'Excellent match', tone: 'gold' }
+  if (scored.score >= 0.6) return { text: 'Bon compromis', tone: 'gold' }
+  return null
 }
