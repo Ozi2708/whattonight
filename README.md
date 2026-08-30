@@ -43,6 +43,35 @@ Cette règle n'est pas une intention, c'est une propriété du code
 Vérifié par balayage : 1 024 configurations, 32 280 paires réellement
 départagées, **zéro inversion**, marge la plus serrée 7,2×.
 
+## Les humeurs
+
+Les genres viennent de TMDB. Les humeurs — 😂 drôle, 🌙 chill, 😱 stressant… —
+sont écrites à la main dans `scripts/movies.moods.mjs`. C'est la donnée sur
+laquelle repose tout le croisement, donc la règle est explicite :
+
+> **Une humeur décrit ce que ça fait au spectateur, pas le rythme ni
+> l'esthétique du film.**
+
+Cette distinction manquait, et une erreur systématique s'y était glissée :
+« chill » avait été posé sur des films lents et léchés — *Drive*, *Blade
+Runner 2049*, *Aftersun*, *Moonlight*. Lents, oui ; reposants, non. Demander
+« on se pose » et recevoir *Drive* trahit la demande.
+
+Deux incompatibilités sont donc vérifiées par `npm run moods:check`, qui
+tourne en tête du build :
+
+- `chill` / `facile` ⟂ `intense` / `stressant` / `mindfuck`
+
+Un film ne peut pas à la fois se regarder fatigué et tenir en haleine. Une
+contradiction fait échouer le build plutôt que d'atteindre l'écran.
+
+Conséquence assumée : ce catalogue penche vers le drame et le thriller, donc
+peu de titres méritent « chill » — huit, plus onze « faciles ». Mieux vaut un
+choix restreint mais juste.
+
+`npm run moods:sync` applique une correction d'humeur au catalogue généré
+sans retélécharger les 100 films.
+
 ## Ce que Venn apprend
 
 | Signal | Poids | Pourquoi |

@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/fetch-movies.mjs --optional && tsc -b && vite build",
+    "build": "node scripts/check-moods.mjs && node scripts/fetch-movies.mjs --optional && node scripts/sync-moods.mjs && tsc -b && vite build",
     "preview": "vite preview",
     "fetch:movies": "node scripts/fetch-movies.mjs",
-    "icons": "node scripts/make-icons.mjs"
+    "icons": "node scripts/make-icons.mjs",
+    "moods:check": "node scripts/check-moods.mjs",
+    "moods:sync": "node scripts/check-moods.mjs && node scripts/sync-moods.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",

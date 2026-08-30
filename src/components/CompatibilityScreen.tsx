@@ -56,6 +56,8 @@ export function CompatibilityScreen({
   // laisserait croire à un travail de sélection qui n'a pas été fait.
   const narrowed = funnel.preferences < funnel.constraints
   const limited = funnel.constraints < funnel.total
+  // Accord du verbe : « 1 film respectent » se lit mal et fait amateur.
+  const s_ = count > 1 ? 's' : ''
 
   const tags = [
     ...cg.genres.slice(0, 2),
@@ -80,9 +82,9 @@ export function CompatibilityScreen({
         className="mt-7 text-[27px] leading-tight font-semibold tracking-tight text-balance"
       >
         {narrowed
-          ? `On a trouvé ${plural(count, 'film')} qui vous vont à tous les deux.`
+          ? `On a trouvé ${plural(count, 'film')} qui vous v${count > 1 ? 'ont' : 'a'} à tous les deux.`
           : limited
-            ? `${plural(count, 'film')} respectent vos limites à tous les deux.`
+            ? `${plural(count, 'film')} respecte${s_} vos limites à tous les deux.`
             : `Tout est ouvert : ${plural(count, 'film')} sur la table.`}
       </motion.h1>
 
@@ -118,8 +120,10 @@ export function CompatibilityScreen({
         {/* On n'affiche que les étapes qui ont réellement retiré des films :
             « 100 → 100 → 100 » n'apprend rien et fait douter du calcul. */}
         {funnel.total} films
-        {limited && ` → ${funnel.constraints} respectent vos limites`}
-        {narrowed && ` → ${funnel.preferences} vous ressemblent`}
+        {limited &&
+          ` → ${funnel.constraints} respecte${funnel.constraints > 1 ? 'nt' : ''} vos limites`}
+        {narrowed &&
+          ` → ${funnel.preferences} vous ressemble${funnel.preferences > 1 ? 'nt' : ''}`}
         {!limited && !narrowed && ' — vous n’avez encore rien écarté'}
       </motion.p>
 
@@ -147,8 +151,82 @@ export function CompatibilityScreen({
         </motion.p>
       )}
 
+      {/* Le choix est maigre sans être vide : les compromis étaient calculés
+          mais n'étaient affichés que lorsqu'il ne restait RIEN. Deux films un
+          soir, c'est déjà une frustration — autant dire ce qui l'ouvrirait. */}
+      {result.relaxations.length > 0 && (
+        <div className="mt-8 w-full max-w-sm">
+          <p className="text-[13px] leading-relaxed text-muted text-balance">
+            Le choix est mince ce soir. Voici ce qui l’élargirait — chacun
+            décide pour ses propres limites.
+          </p>
+          <Relaxations
+            options={result.relaxations}
+            currentUserId={currentUserId}
+            names={names}
+            onAccept={onAcceptRelaxation}
+            busy={busy}
+          />
+        </div>
+      )}
+
       {onRestart && <Restart onRestart={onRestart} />}
     </div>
+  )
+}
+
+/**
+ * Assouplissements chiffrés.
+ *
+ * On ne retire JAMAIS une contrainte de soi-même : on annonce ce que chacune
+ * coûte, et seule la personne concernée peut céder sur la sienne — depuis son
+ * propre téléphone.
+ */
+function Relaxations({
+  options,
+  currentUserId,
+  names,
+  onAccept,
+  busy,
+}: {
+  options: Relaxation[]
+  currentUserId: string
+  names: Record<string, string>
+  onAccept: (r: Relaxation) => void
+  busy: boolean
+}) {
+  return (
+    <ul className="mt-4 space-y-2.5">
+      {options.map((r, i) => {
+        const mine = r.userId === currentUserId
+        return (
+          <li
+            key={`${r.userId}-${r.label}-${i}`}
+            className="rounded-2xl border border-line bg-surface/60 p-4 text-left"
+          >
+            <p className="text-[14.5px] font-medium">{r.label}</p>
+            <p className="mt-1 text-[13px] text-gold">
+              +{plural(r.gain, 'film')} disponible{r.gain > 1 ? 's' : ''}
+            </p>
+            {mine ? (
+              <button
+                type="button"
+                onClick={() => onAccept(r)}
+                disabled={busy}
+                className="mt-3 w-full rounded-xl bg-gold py-3 text-[14px] font-semibold text-ink disabled:opacity-50"
+              >
+                J’accepte
+              </button>
+            ) : (
+              <p className="mt-3 text-[12.5px] text-muted">
+                {/* Tournure neutre : le prénom ne dit rien du genre. */}
+                {names[r.userId] ?? 'La personne concernée'} peut l’accepter depuis son téléphone.
+              </p>
+            )}
+          </li>
+        )
+      })}
+    </ul>
   )
 }
 
@@ -210,38 +288,13 @@ function NoMatch({
             propres limites.
           </p>
 
-          <ul className="mt-7 space-y-2.5">
-            {options.map((r, i) => {
-              const mine = r.userId === currentUserId
-              return (
-                <li
-                  key={`${r.userId}-${r.label}-${i}`}
-                  className="rounded-2xl border border-line bg-surface/60 p-4"
-                >
-                  <p className="text-[14.5px] font-medium">{r.label}</p>
-                  <p className="mt-1 text-[13px] text-gold">
-                    +{plural(r.gain, 'film')} disponible{r.gain > 1 ? 's' : ''}
-                  </p>
-                  {mine ? (
-                    <button
-                      type="button"
-                      onClick={() => onAccept(r)}
-                      disabled={busy}
-                      className="mt-3 w-full rounded-xl bg-gold py-3 text-[14px] font-semibold text-ink disabled:opacity-50"
-                    >
-                      J’accepte
-                    </button>
-                  ) : (
-                    <p className="mt-3 text-[12.5px] text-muted">
-                      {/* Tournure neutre : le prénom ne dit rien du genre. */}
-                      {names[r.userId] ?? 'La personne concernée'} peut l’accepter depuis son
-                      téléphone.
-                    </p>
-                  )}
-                </li>
-              )
-            })}
-          </ul>
+          <Relaxations
+            options={options}
+            currentUserId={currentUserId}
+            names={names}
+            onAccept={onAccept}
+            busy={busy}
+          />
         </>
       )}
 
