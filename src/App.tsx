@@ -14,6 +14,7 @@ import { DuoScreen } from './components/DuoScreen'
 import { QuickTaste } from './components/QuickTaste'
 import { buildProfile, type Signals } from './movies/taste'
 import { initAccount, useAccount } from './core/account'
+import { pushRating } from './core/duo'
 import { isCloudConfigured } from './core/supabase'
 import { startLibrarySync, stopLibrarySync } from './core/librarySync'
 
@@ -148,7 +149,14 @@ export default function App() {
       {state.sheet === 'quicktaste' && (
         <QuickTaste
           alreadyRated={new Set(Object.keys(ratings))}
-          onRate={(id, verdict) => library.rate(CATEGORY, id, verdict)}
+          onRate={(id, verdict) => {
+            library.rate(CATEGORY, id, verdict)
+            // Provenance déclarée à l'écriture : le miroir de bibliothèque ne
+            // la touche plus, elle reste donc exacte.
+            if (account.profile) {
+              void pushRating(account.profile.id, id, verdict, 'quickstart').catch(() => {})
+            }
+          }}
           onClose={back}
         />
       )}

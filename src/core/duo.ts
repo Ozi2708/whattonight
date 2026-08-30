@@ -434,12 +434,20 @@ export async function pushRating(
   if (error) throw error
 }
 
+/**
+ * Miroir de masse des avis locaux.
+ *
+ * N'envoie DÉLIBÉRÉMENT ni `source` ni `session_id` : un upsert ne met à jour
+ * que les colonnes qu'on lui donne. En les incluant, ce miroir réécrivait en
+ * « catalog » l'avis que la personne venait de donner après une soirée — la
+ * provenance du signal le plus fort de Venn était détruite 900 ms après avoir
+ * été écrite. Les nouvelles lignes prennent la valeur par défaut de la colonne.
+ */
 export async function pushRatings(userId: string, ratings: Record<string, Verdict>) {
   const rows = Object.entries(ratings).map(([movie_id, verdict]) => ({
     user_id: userId,
     movie_id,
     verdict,
-    source: 'catalog',
     updated_at: new Date().toISOString(),
   }))
   if (!rows.length) return
