@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import { VennMark } from './VennMark'
 import { WishesForm } from './WishesForm'
@@ -9,7 +9,7 @@ import { IconCheck } from './icons'
 import { MOVIES, MOVIES_BY_ID, plural, type Movie } from '../movies/catalog'
 import { explain, match, matchLabel, type MatchResult, type Participant, type Relaxation, type Wishes } from '../movies/matching'
 import { NO_FILTERS } from '../movies/filters'
-import { AVATARS, saveIdentity, useAccount } from '../core/account'
+import { AVATARS, currentUserId, saveIdentity, useAccount } from '../core/account'
 import { friendlyError, isCloudConfigured } from '../core/supabase'
 import {
   createInvite,
@@ -227,6 +227,27 @@ function DuoFlow({
 
 function ConnectPanel({ onConnected }: { onConnected: (duoId: string) => void }) {
   const [code, setCode] = useState<string | null>(null)
+
+  // Tant que le code est affiché, on guette l'arrivée de l'autre personne.
+  // Sans ça, celui qui invite resterait indéfiniment sur son code, alors que
+  // le duo est déjà formé côté serveur.
+  const connected = useRef(onConnected)
+  connected.current = onConnected
+  useEffect(() => {
+    if (!code) return
+    const me = currentUserId()
+    if (!me) return
+    const timer = setInterval(async () => {
+      try {
+        const duoId = await findMyDuo(me)
+        if (duoId) connected.current(duoId)
+      } catch {
+        /* réseau instable : le prochain passage réessaiera */
+      }
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [code])
+
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
