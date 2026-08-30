@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Poster } from './Poster'
 import { InstallCard } from './InstallCard'
+import { IdentityCard } from './IdentityCard'
 import { MOVIES, MOVIES_BY_ID, formatRuntime, type Movie } from '../movies/catalog'
 import { CATEGORIES, MOVIES_CATEGORY } from '../core/categories'
 import { library } from '../core/library'
@@ -20,6 +21,8 @@ export function ProfileScreen({ seen, favorites, lastPicked, onOpen }: Props) {
   return (
     <div className="px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-6">
       <h1 className="text-[26px] leading-tight font-semibold tracking-tight">Profil</h1>
+
+      <IdentityCard />
 
       <InstallCard />
 
