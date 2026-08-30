@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { AVATARS, saveIdentity, useAccount } from '../core/account'
+import { AVATARS, AVATAR_LABELS, saveIdentity, useAccount } from '../core/account'
 import { friendlyError, isCloudConfigured } from '../core/supabase'
 
 /**
@@ -80,6 +80,8 @@ export function IdentityCard() {
             type="button"
             onClick={() => setEmoji(a)}
             aria-pressed={emoji === a}
+            aria-label={AVATAR_LABELS[a] ?? a}
+            title={AVATAR_LABELS[a] ?? a}
             className={`h-10 w-10 rounded-full border text-[18px] transition-colors ${
               emoji === a ? 'border-gold bg-gold/15' : 'border-line bg-surface'
             }`}

@@ -102,7 +102,9 @@ export async function loadDuo(duoId: string): Promise<Duo | null> {
     return {
       userId,
       displayName: (p?.display_name as string) ?? 'Invité',
-      avatarEmoji: (p?.avatar_emoji as string) ?? '🍿',
+      // Repli neutre, volontairement hors de la liste des avatars : il signale
+      // un profil introuvable, pas un choix que quelqu'un aurait fait.
+      avatarEmoji: (p?.avatar_emoji as string) ?? '🎭',
     }
   })
 

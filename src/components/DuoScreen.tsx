@@ -13,7 +13,7 @@ import { QuickContext } from './QuickContext'
 import { FeedbackCard } from './FeedbackCard'
 import type { Verdict } from '../core/types'
 import { NO_FILTERS } from '../movies/filters'
-import { AVATARS, currentUserId, saveIdentity, useAccount } from '../core/account'
+import { AVATARS, AVATAR_LABELS, currentUserId, saveIdentity, useAccount } from '../core/account'
 import { friendlyError, isCloudConfigured } from '../core/supabase'
 import {
   createInvite,
@@ -148,6 +148,8 @@ function Onboarding({ initialError }: { initialError: string | null }) {
             type="button"
             onClick={() => setEmoji(a)}
             aria-pressed={emoji === a}
+            aria-label={AVATAR_LABELS[a] ?? a}
+            title={AVATAR_LABELS[a] ?? a}
             className={`h-11 w-11 rounded-full border text-[19px] transition-colors ${
               emoji === a ? 'border-gold bg-gold/15' : 'border-line bg-surface'
             }`}

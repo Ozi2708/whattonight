@@ -20,7 +20,36 @@ export interface Profile {
   activeDuoId: string | null
 }
 
-export const AVATARS = ['🍿', '🎬', '🌙', '🔥', '🎧', '🐙', '🌿', '⚡', '🫧', '🍒']
+/**
+ * Avatars : des objets de cinéma, pas des icônes de nourriture.
+ *
+ * Le pop-corn et le clap disaient « une app de films » — ce que l'utilisateur
+ * sait déjà. Un anneau, une baguette, un sabre : chacun choisit un objet qui
+ * raconte quelque chose de lui, et le duo devient tout de suite plus lisible
+ * d'un coup d'œil (deux silhouettes distinctes valent mieux que deux ronds).
+ *
+ * Aucune séquence exotique : tous ces emoji existent depuis longtemps et
+ * rendent partout. Pas de personnage humain non plus — ils portent une couleur
+ * de peau et un genre par défaut, ce qu'un avatar choisi ne devrait pas
+ * imposer.
+ */
+export const AVATARS = ['💍', '🪄', '⚔️', '🦖', '🕶️', '🛸', '🦇', '🕷️', '🥊', '🤖', '👑', '⏳']
+
+/** Ce que chaque objet évoque — lu par les lecteurs d'écran et au survol. */
+export const AVATAR_LABELS: Record<string, string> = {
+  '💍': 'L’anneau unique',
+  '🪄': 'La baguette de sorcier',
+  '⚔️': 'Le sabre',
+  '🦖': 'Le T-Rex',
+  '🕶️': 'Les lunettes noires',
+  '🛸': 'La soucoupe',
+  '🦇': 'La chauve-souris',
+  '🕷️': 'L’araignée',
+  '🥊': 'Le gant de boxe',
+  '🤖': 'Le robot',
+  '👑': 'La couronne',
+  '⏳': 'Le sablier',
+}
 
 interface State {
   status: 'loading' | 'anonymous' | 'signed-in' | 'unavailable'
