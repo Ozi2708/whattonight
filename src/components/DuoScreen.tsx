@@ -8,9 +8,10 @@ import { Poster } from './Poster'
 import { IconCheck } from './icons'
 import { MOVIES, MOVIES_BY_ID, plural, type Movie } from '../movies/catalog'
 import { explain, match, matchLabel, type MatchResult, type Participant, type Relaxation, type ScoredMovie, type Wishes } from '../movies/matching'
-import { buildDuoTaste, buildProfile, EMPTY_SIGNALS, type DuoTaste, type Signals, type TasteProfile } from '../movies/taste'
+import { buildDuoTaste, buildProfile, EMPTY_SIGNALS, type Affinity, type DuoTaste, type Signals, type TasteProfile } from '../movies/taste'
 import { QuickContext } from './QuickContext'
 import { FeedbackCard } from './FeedbackCard'
+import { DuoSignature } from './Signature'
 import type { Verdict } from '../core/types'
 import { NO_FILTERS } from '../movies/filters'
 import { AVATARS, AVATAR_LABELS, currentUserId, saveIdentity, useAccount } from '../core/account'
@@ -561,6 +562,21 @@ function DuoSession({
     return out
   }, [tasteSignals])
 
+  /**
+   * Les deux portraits, pour la silhouette superposée. `null` tant que l'un
+   * des deux est vide : une zone commune calculée sur du vide se lirait comme
+   * un désaccord, ce qui serait faux.
+   */
+  const silhouettes = useMemo(() => {
+    // Moi d'abord : l'or désigne « toi » partout ailleurs dans l'app, la
+    // couleur ne doit pas changer de sens sur ce seul écran.
+    const pair = [...duo.members]
+      .sort((m) => (m.userId === profile.id ? -1 : 1))
+      .map((m) => ({ name: m.displayName, taste: tastes[m.userId] }))
+    if (pair.length < 2 || pair.some((p) => !p.taste || p.taste.depth === 'vierge')) return null
+    return pair.map((p) => ({ name: p.name, moods: p.taste!.moods }))
+  }, [duo.members, tastes, profile.id])
+
   const duoTaste: DuoTaste | null = useMemo(() => {
     const ids = duo.members.map((m) => m.userId)
     if (ids.length < 2) return null
@@ -711,6 +727,7 @@ function DuoSession({
         busy={busy}
         error={error}
         duoTaste={duoTaste}
+        silhouettes={silhouettes}
         feedback={pendingFeedback?.movie ?? null}
         onFeedback={(v) =>
           pendingFeedback && answerFeedback(pendingFeedback.movieId, v, pendingFeedback.sessionId)
@@ -867,6 +884,7 @@ function DuoHome({
   busy,
   error,
   duoTaste,
+  silhouettes,
   feedback,
   onFeedback,
   onSkipFeedback,
@@ -880,6 +898,8 @@ function DuoHome({
   busy: boolean
   error: string | null
   duoTaste: DuoTaste | null
+  /** Les deux portraits individuels, quand Venn en sait assez sur les deux. */
+  silhouettes: { name: string; moods: Affinity[] }[] | null
   feedback: Movie | null
   onFeedback: (v: Verdict) => void
   onSkipFeedback: () => void
@@ -950,7 +970,9 @@ function DuoHome({
 
       {error && <p className="mt-4 text-[13px] text-rose-300">{error}</p>}
 
-      {duoTaste && duoTaste.depth !== 'vierge' && <DuoTasteCard taste={duoTaste} />}
+      {duoTaste && duoTaste.depth !== 'vierge' && (
+        <DuoTasteCard taste={duoTaste} silhouettes={silhouettes} />
+      )}
 
       {last && (
         <button
@@ -991,7 +1013,13 @@ function DuoHome({
  * lesquels les deux se sont prononcés. C'est peu de matière au début, et c'est
  * assumé — mieux vaut une carte qui apparaît tard qu'une carte qui invente.
  */
-function DuoTasteCard({ taste }: { taste: DuoTaste }) {
+function DuoTasteCard({
+  taste,
+  silhouettes,
+}: {
+  taste: DuoTaste
+  silhouettes: { name: string; moods: Affinity[] }[] | null
+}) {
   return (
     <motion.section
       initial={{ opacity: 0, y: 10 }}
@@ -1000,6 +1028,16 @@ function DuoTasteCard({ taste }: { taste: DuoTaste }) {
     >
       <h2 className="text-[15px] font-semibold">Votre Venn</h2>
       <p className="mt-0.5 text-[11.5px] text-muted">{taste.depthLabel}</p>
+
+      {/* Les deux silhouettes superposées : l'intersection, c'est le concept
+          même de Venn, dessiné plutôt qu'expliqué. Affichée seulement quand
+          Venn connaît réellement les deux — sinon la zone commune ne dirait
+          rien d'autre que « on ne sait pas ». */}
+      {silhouettes && (
+        <div className="mt-4">
+          <DuoSignature a={silhouettes[0]} b={silhouettes[1]} />
+        </div>
+      )}
 
       {taste.sentences.length > 0 ? (
         <ul className="mt-3 space-y-1.5">

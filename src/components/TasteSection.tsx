@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Poster } from './Poster'
 import { MOOD_LABELS, type Movie } from '../movies/catalog'
-import type { Affinity, TasteProfile } from '../movies/taste'
+import { EMPTY_SHAPE, Signature } from './Signature'
+import type { TasteProfile } from '../movies/taste'
 
 interface Props {
   profile: TasteProfile
@@ -254,155 +255,6 @@ function EmptyTaste({ onDiscover }: { onDiscover: () => void }) {
         Aider Venn à me connaître
       </button>
     </section>
-  )
-}
-
-/* ---------------------------------------------------------------- silhouette */
-
-/**
- * L'ordre des axes n'est pas décoratif.
- *
- * Les humeurs sont rangées du plus léger au plus chargé, de sorte que les
- * contraires se retrouvent face à face : « facile » en face de « mindfuck »,
- * « chill » en face de « intense ». La forme obtenue penche alors visiblement
- * d'un côté — c'est ce qui en fait une signature reconnaissable plutôt qu'un
- * graphique de plus. Ranger ces dix axes au hasard donnerait des étoiles
- * toutes semblables.
- */
-const AXES = [
-  'drole',
-  'facile',
-  'chill',
-  'emotion',
-  'intelligent',
-  'mindfuck',
-  'surprenant',
-  'stressant',
-  'intense',
-  'spectaculaire',
-]
-
-const CENTER = 130
-const R_MIN = 16
-const R_MAX = 84
-const R_EMOJI = 108
-
-/** Un score dans [-0.45, 0.45] occupe tout le rayon ; au-delà, on plafonne. */
-function radius(score: number): number {
-  const t = Math.max(0, Math.min(1, (score + 0.45) / 0.9))
-  return R_MIN + t * (R_MAX - R_MIN)
-}
-
-const point = (i: number, r: number) => {
-  const angle = (i / AXES.length) * Math.PI * 2 - Math.PI / 2
-  return [CENTER + Math.cos(angle) * r, CENTER + Math.sin(angle) * r] as const
-}
-
-const EMPTY_SHAPE = AXES.map((_, i) => {
-  const angle = (i / AXES.length) * Math.PI * 2 - Math.PI / 2
-  return `${(50 + Math.cos(angle) * 34).toFixed(1)},${(50 + Math.sin(angle) * 34).toFixed(1)}`
-}).join(' ')
-
-function Signature({ moods }: { moods: Affinity[] }) {
-  const byKey = useMemo(() => new Map(moods.map((m) => [m.key, m])), [moods])
-
-  const nodes = AXES.map((key, i) => {
-    const affinity = byKey.get(key)
-    // Une humeur sans preuve reste au milieu : l'absence de donnée ne doit pas
-    // se lire comme un rejet.
-    const score = affinity?.score ?? 0
-    const [x, y] = point(i, radius(score))
-    const [ex, ey] = point(i, R_EMOJI)
-    return { key, score, x, y, ex, ey, emoji: MOOD_LABELS[key]?.emoji ?? '' }
-  })
-
-  const shape = nodes.map((n) => `${n.x.toFixed(1)},${n.y.toFixed(1)}`).join(' ')
-  const strong = nodes.filter((n) => n.score >= 0.16)
-
-  return (
-    <svg viewBox="0 0 260 260" className="mx-auto h-auto w-full max-w-[264px]" aria-hidden>
-      <defs>
-        {/* Dégradé plutôt qu'un aplat : la forme prend du volume et le regard
-            va vers le centre, là où se lit la dominante. */}
-        <radialGradient id="adn-fill" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="var(--color-gold)" stopOpacity="0.42" />
-          <stop offset="70%" stopColor="var(--color-gold)" stopOpacity="0.16" />
-          <stop offset="100%" stopColor="var(--color-gold)" stopOpacity="0.08" />
-        </radialGradient>
-        <filter id="adn-glow" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="5" result="b" />
-          <feMerge>
-            <feMergeNode in="b" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
-      {/* Repères : trois anneaux discrets, juste assez pour donner l'échelle. */}
-      {[0.34, 0.67, 1].map((k) => (
-        <circle
-          key={k}
-          cx={CENTER}
-          cy={CENTER}
-          r={R_MIN + (R_MAX - R_MIN) * k}
-          fill="none"
-          stroke="var(--color-line)"
-          strokeWidth="1"
-          opacity={0.55}
-        />
-      ))}
-      {AXES.map((key, i) => {
-        const [x, y] = point(i, R_MAX)
-        return (
-          <line
-            key={key}
-            x1={CENTER}
-            y1={CENTER}
-            x2={x}
-            y2={y}
-            stroke="var(--color-line)"
-            strokeWidth="1"
-            opacity={0.4}
-          />
-        )
-      })}
-
-      <motion.g
-        initial={{ scale: 0.2, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 130, damping: 18, mass: 0.9 }}
-        style={{ transformOrigin: `${CENTER}px ${CENTER}px` }}
-      >
-        {/* Le remplissage n'est pas flouté : appliquer le halo à l'ensemble
-            noyait les sommets et toutes les silhouettes se ressemblaient. */}
-        <polygon points={shape} fill="url(#adn-fill)" />
-        <polygon
-          points={shape}
-          fill="none"
-          stroke="var(--color-gold)"
-          strokeWidth="2.5"
-          strokeLinejoin="round"
-          filter="url(#adn-glow)"
-        />
-        {/* Seuls les sommets marqués sont matérialisés : un point partout
-            ferait ressembler tous les profils à la même roue dentée. */}
-        {strong.map((n) => (
-          <circle key={n.key} cx={n.x} cy={n.y} r="4" fill="var(--color-gold)" />
-        ))}
-      </motion.g>
-
-      {nodes.map((n) => (
-        <text
-          key={`e-${n.key}`}
-          x={n.ex}
-          y={n.ey + 5}
-          textAnchor="middle"
-          style={{ fontSize: n.score >= 0.16 ? 17 : 13 }}
-          opacity={n.score >= 0.16 ? 1 : 0.28}
-        >
-          {n.emoji}
-        </text>
-      ))}
-    </svg>
   )
 }
 

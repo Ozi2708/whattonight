@@ -10,6 +10,9 @@
   --color-muted: #8b8b99;
   --color-gold: #ffc94a;
   --color-gold-deep: #c98f1c;
+  /* Seconde voix du duo. L'or dit « toi » partout dans l'app ; il fallait une
+     couleur pour « l'autre » qui tienne à côté sans lui voler la vedette. */
+  --color-duo: #9b8cff;
 
   --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
 

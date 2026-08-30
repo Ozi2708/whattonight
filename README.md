@@ -92,6 +92,14 @@ Ce que l'utilisateur corrige prime sur ce que Venn a déduit.
 
 ## Le profil du duo
 
+Sur l'écran du duo, les deux silhouettes se superposent sur les mêmes axes et
+la zone pleine est leur terrain commun. Ce n'est pas une illustration :
+c'est le **minimum axe par axe**, exactement la définition que le moteur
+utilise (`pairScore`, dominé par le moins bien servi des deux). Deux personnes
+aux goûts opposés voient une petite lentille au centre ; deux goûts proches,
+une grande forme. Le dessin montre la règle réelle, pas une jolie
+approximation qui dirait autre chose que le calcul.
+
 Ce n'est pas la moyenne de deux profils. Ne comptent que les films sur lesquels
 les **deux** se sont prononcés, et c'est le moins enthousiaste des deux avis
 qui est retenu : un film adoré par l'un et détesté par l'autre n'est pas à
