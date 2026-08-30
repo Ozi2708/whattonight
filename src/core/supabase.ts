@@ -11,7 +11,25 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js'
  * n'autorise rien par elle-même. Toute la sécurité tient aux politiques RLS
  * définies dans supabase/schema.sql.
  */
-const url = import.meta.env.VITE_SUPABASE_URL?.trim()
+/**
+ * Une barre oblique finale suffit à tout casser : supabase-js concatène
+ * `${url}/auth/v1/…`, ce qui donne un double slash, et la passerelle répond
+ * « Invalid path specified in request URL ». On normalise plutôt que de
+ * compter sur un copier-coller parfait.
+ */
+function normalizeUrl(raw: string | undefined): string | undefined {
+  const value = raw?.trim().replace(/\/+$/, '')
+  if (!value) return undefined
+  try {
+    const parsed = new URL(value)
+    // Seule l'origine compte : un chemin collé par erreur est écarté.
+    return parsed.origin
+  } catch {
+    return undefined
+  }
+}
+
+const url = normalizeUrl(import.meta.env.VITE_SUPABASE_URL)
 
 // Supabase a remplacé la clé « anon » (JWT) par une clé « publishable »
 // (sb_publishable_…). Les deux fonctionnent avec supabase-js ; on accepte les
@@ -42,6 +60,9 @@ export function friendlyError(error: unknown): string {
     return 'Les tables sont absentes : colle supabase/schema.sql dans le SQL Editor de Supabase, puis Run.'
   }
   if (/failed to fetch|networkerror/i.test(raw)) return 'Pas de connexion au serveur.'
+  if (/invalid path specified/i.test(raw)) {
+    return 'URL Supabase mal formée. Elle doit valoir exactement https://xxxxx.supabase.co — sans barre finale ni chemin.'
+  }
   if (/invalid api key|jwt/i.test(raw)) {
     return 'Clé Supabase invalide : vérifie que c’est bien la clé publishable (ou anon), pas la clé secrète.'
   }
