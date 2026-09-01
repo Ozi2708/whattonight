@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Poster } from './Poster'
 import { SeenStamp } from './SeenStamp'
 import { IconHeart } from './icons'
-import { MOVIES, type Movie } from '../movies/catalog'
+import { WORKS, type Work } from '../movies/catalog'
 
 type View = 'all' | 'todo' | 'seen' | 'favorites'
 
@@ -16,7 +16,7 @@ const VIEWS: { id: View; label: string }[] = [
 interface Props {
   seen: Set<string>
   favorites: Set<string>
-  onOpen: (m: Movie) => void
+  onOpen: (m: Work) => void
 }
 
 /** Petite phrase de progression. Jamais de points ni de badges : une collection. */
@@ -48,30 +48,30 @@ export function CatalogScreen({ seen, favorites, onOpen }: Props) {
   const movies = useMemo(() => {
     switch (view) {
       case 'todo':
-        return MOVIES.filter((m) => !seen.has(m.id))
+        return WORKS.filter((m) => !seen.has(m.id))
       case 'seen':
-        return MOVIES.filter((m) => seen.has(m.id))
+        return WORKS.filter((m) => seen.has(m.id))
       case 'favorites':
-        return MOVIES.filter((m) => favorites.has(m.id))
+        return WORKS.filter((m) => favorites.has(m.id))
       default:
-        return MOVIES
+        return WORKS
     }
   }, [view, seen, favorites])
 
-  const progress = Math.round((seen.size / MOVIES.length) * 100)
+  const progress = Math.round((seen.size / WORKS.length) * 100)
 
   return (
     <div className="px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-6">
       <header>
         <h1 className="text-[26px] leading-tight font-semibold tracking-tight">
-          Les {MOVIES.length} films à voir
+          Les {WORKS.length} films à voir
         </h1>
 
         <div className="mt-5">
           <div className="flex items-baseline justify-between">
             <p className="text-[15px] font-medium">
               <span className="text-gold">{seen.size}</span>
-              <span className="text-muted"> / {MOVIES.length} films vus</span>
+              <span className="text-muted"> / {WORKS.length} films vus</span>
             </p>
             <p className="text-[13px] font-semibold text-muted">{progress} %</p>
           </div>
@@ -81,7 +81,7 @@ export function CatalogScreen({ seen, favorites, onOpen }: Props) {
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="mt-2 text-[12.5px] text-muted">{milestone(seen.size, MOVIES.length)}</p>
+          <p className="mt-2 text-[12.5px] text-muted">{milestone(seen.size, WORKS.length)}</p>
         </div>
       </header>
 

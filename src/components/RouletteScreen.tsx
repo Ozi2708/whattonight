@@ -4,7 +4,7 @@ import { Reel } from './Reel'
 import { Poster } from './Poster'
 import { Chip } from './Chip'
 import { IconCheck, IconHeart, IconRefresh, IconSliders, IconStar } from './icons'
-import { MOVIES, MOVIES_BY_ID, formatRuntime, type Movie } from '../movies/catalog'
+import { WORKS, WORKS_BY_ID, formatRuntime, type Work } from '../movies/catalog'
 import { applyFilters, countActive, type Filters } from '../movies/filters'
 import { pickNext, pickWeighted, shuffle } from '../core/picker'
 import { library } from '../core/library'
@@ -30,18 +30,18 @@ interface Props {
   seen: Set<string>
   favorites: Set<string>
   history: string[]
-  result: Movie | null
-  onResult: (m: Movie | null) => void
-  tonight: Movie | null
-  onChoose: (m: Movie | null) => void
-  onOpenDetails: (m: Movie) => void
+  result: Work | null
+  onResult: (m: Work | null) => void
+  tonight: Work | null
+  onChoose: (m: Work | null) => void
+  onOpenDetails: (m: Work) => void
 
   /**
    * Mode duo : le pool est calculé en amont par le moteur de compatibilité.
    * Quand il est fourni, les filtres solo disparaissent — les envies ont déjà
    * été exprimées par les deux personnes.
    */
-  externalPool?: Movie[]
+  externalPool?: Work[]
   /**
    * Poids de tirage par identifiant, dans [0,1]. En duo, c'est le score de
    * compatibilité : la roulette ne tire plus au hasard parmi des films
@@ -54,9 +54,9 @@ interface Props {
   heading?: string
   ctaLabel?: string
   /** Bloc « pourquoi ce film », sous la fiche résultat. */
-  renderReasons?: (movie: Movie) => ReactNode
+  renderReasons?: (movie: Work) => ReactNode
   /** Signal de refus, pour le futur profil de goûts. */
-  onRefuse?: (movie: Movie) => void
+  onRefuse?: (movie: Work) => void
   /** Retour vers l'écran précédent — indispensable en duo. */
   onBack?: () => void
 
@@ -70,7 +70,7 @@ interface Props {
   /** Tirage reçu de l'hôte : la bande est rejouée à l'identique. */
   remoteSpin?: { strip: string[]; winnerIndex: number; nonce: number } | null
   /** Émis par l'hôte au lancement, pour diffusion à l'autre appareil. */
-  onSpinStart?: (strip: Movie[], winnerIndex: number) => void
+  onSpinStart?: (strip: Work[], winnerIndex: number) => void
 }
 
 type Phase = 'idle' | 'spinning'
@@ -103,9 +103,9 @@ export function RouletteScreen({
 }: Props) {
   const reduced = useReducedMotion() ?? false
   const [phase, setPhase] = useState<Phase>('idle')
-  const [strip, setStrip] = useState<Movie[]>([])
+  const [strip, setStrip] = useState<Work[]>([])
 
-  const soloPool = useMemo(() => applyFilters(MOVIES, filters, seen), [filters, seen])
+  const soloPool = useMemo(() => applyFilters(WORKS, filters, seen), [filters, seen])
   const pool = externalPool ?? soloPool
   const duo = externalPool !== undefined
   const activeCount = countActive(filters)
@@ -127,8 +127,8 @@ export function RouletteScreen({
     const base = shuffle(pool).slice(0, Math.min(STRIP_UNIQUE, pool.length))
     const next = Array.from({ length: STRIP_LENGTH }, (_, i) => base[i % base.length])
     // `winner` peut porter le champ `weight` ajouté ci-dessus : on repasse par
-    // le catalogue pour ne garder qu'un Movie propre dans la bande.
-    next[WINNER_AT] = MOVIES_BY_ID.get(winner.id) ?? pool[0]
+    // le catalogue pour ne garder qu'un Work propre dans la bande.
+    next[WINNER_AT] = WORKS_BY_ID.get(winner.id) ?? pool[0]
 
     library.remember(MOVIES_CATEGORY.id, winner.id)
     onChoose(null)
@@ -141,7 +141,7 @@ export function RouletteScreen({
   // Côté spectateur : on rejoue la bande exacte de l'hôte, pas un tirage local.
   useEffect(() => {
     if (!remoteSpin) return
-    const rebuilt = remoteSpin.strip.map((id) => MOVIES_BY_ID.get(id)).filter((m): m is Movie => !!m)
+    const rebuilt = remoteSpin.strip.map((id) => WORKS_BY_ID.get(id)).filter((m): m is Work => !!m)
     if (rebuilt.length !== remoteSpin.strip.length) return
     onChoose(null)
     onResult(null)
@@ -313,7 +313,7 @@ function IdleState({ count, duo }: { count: number; duo: boolean }) {
  * déborder de l'écran, quelle que soit la largeur du téléphone.
  */
 function FannedPosters() {
-  const sample = useMemo(() => shuffle(MOVIES).slice(0, 3), [])
+  const sample = useMemo(() => shuffle(WORKS).slice(0, 3), [])
   const tilts = [
     'w-[27%] -rotate-12 translate-x-4 opacity-80',
     'w-[34%] z-10',
@@ -365,7 +365,7 @@ function EmptyState({ duo, onOpenFilters }: { duo: boolean; onOpenFilters: () =>
 
 interface ResultProps {
   spectator: boolean
-  movie: Movie
+  movie: Work
   seen: boolean
   favorite: boolean
   reduced: boolean
@@ -496,7 +496,7 @@ function TonightPanel({
   onDetails,
   onChangeMind,
 }: {
-  movie: Movie
+  movie: Work
   onDetails: () => void
   onChangeMind: () => void
 }) {
@@ -546,7 +546,7 @@ function TonightPanel({
 }
 
 /** Nappe colorée tirée de l'affiche : donne une identité à chaque film. */
-function AmbientGlow({ movie }: { movie: Movie | null }) {
+function AmbientGlow({ movie }: { movie: Work | null }) {
   if (!movie?.image) return null
   return (
     <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">

@@ -1,11 +1,11 @@
 import { Sheet } from './Sheet'
 import { Poster } from './Poster'
 import { IconCheck, IconHeart, IconStar } from './icons'
-import { formatRuntime, type Movie } from '../movies/catalog'
+import { formatRuntime, type Work } from '../movies/catalog'
 import type { Verdict } from '../core/types'
 
 interface Props {
-  movie: Movie | null
+  movie: Work | null
   onClose: () => void
   seen: boolean
   favorite: boolean
@@ -25,7 +25,7 @@ const VERDICTS: { id: Verdict; emoji: string; label: string }[] = [
 ]
 
 /** Fiche film : rapide à lire, l'affiche fait le gros du travail. */
-export function MovieSheet({
+export function WorkSheet({
   movie,
   onClose,
   seen,

@@ -4,8 +4,8 @@ import { RouletteScreen } from './components/RouletteScreen'
 import { CatalogScreen } from './components/CatalogScreen'
 import { ProfileScreen } from './components/ProfileScreen'
 import { FilterSheet } from './components/FilterSheet'
-import { MovieSheet } from './components/MovieSheet'
-import { MOVIES, MOVIES_BY_ID, type Movie } from './movies/catalog'
+import { WorkSheet } from './components/WorkSheet'
+import { WORKS, WORKS_BY_ID, type Work } from './movies/catalog'
 import { applyFilters, NO_FILTERS, type Filters } from './movies/filters'
 import { useLibrary, library } from './core/library'
 import { useNavigation } from './core/navigation'
@@ -47,8 +47,8 @@ export default function App() {
 
   // Résultat courant de la roulette et choix validé pour la soirée : gardés ici
   // pour survivre aux changements d'onglet.
-  const [result, setResult] = useState<Movie | null>(null)
-  const [tonight, setTonight] = useState<Movie | null>(null)
+  const [result, setResult] = useState<Work | null>(null)
+  const [tonight, setTonight] = useState<Work | null>(null)
 
   const { seenSet, favoriteSet, history, lastPicked, ratings, adjustments, chosen, refused } =
     useLibrary(CATEGORY)
@@ -66,20 +66,20 @@ export default function App() {
   )
   const taste = useMemo(() => buildProfile(signals), [signals])
 
-  const details = state.detailsId ? (MOVIES_BY_ID.get(state.detailsId) ?? null) : null
+  const details = state.detailsId ? (WORKS_BY_ID.get(state.detailsId) ?? null) : null
   const showDetails = state.sheet === 'details' && details !== null
 
   const goToTab = (tab: Tab) => push({ tab, sheet: null, detailsId: null })
   const openFilters = () => push({ ...state, sheet: 'filters' })
-  const openDetails = (movie: Movie) => push({ ...state, sheet: 'details', detailsId: movie.id })
+  const openDetails = (movie: Work) => push({ ...state, sheet: 'details', detailsId: movie.id })
 
-  const choose = (movie: Movie | null) => {
+  const choose = (movie: Work | null) => {
     setTonight(movie)
     if (movie) library.choose(CATEGORY, movie.id)
   }
 
   /** Depuis la fiche : « c'est ce film ce soir ». */
-  const playFromSheet = (movie: Movie) => {
+  const playFromSheet = (movie: Work) => {
     setResult(movie)
     choose(movie)
     // `replace` plutôt que `push` : la fiche se referme en même temps qu'on
@@ -143,7 +143,7 @@ export default function App() {
         onClose={back}
         filters={filters}
         onChange={setFilters}
-        matches={applyFilters(MOVIES, filters, seenSet).length}
+        matches={applyFilters(WORKS, filters, seenSet).length}
       />
 
       {state.sheet === 'quicktaste' && (
@@ -161,7 +161,7 @@ export default function App() {
         />
       )}
 
-      <MovieSheet
+      <WorkSheet
         movie={showDetails ? details : null}
         verdict={details ? (ratings[details.id] ?? null) : null}
         onRate={(verdict) => details && library.rate(CATEGORY, details.id, verdict)}

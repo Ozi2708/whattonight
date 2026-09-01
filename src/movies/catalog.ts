@@ -1,7 +1,7 @@
 import raw from '../data/movies.json'
 import type { RouletteItem } from '../core/types'
 
-export interface Movie extends RouletteItem {
+export interface Work extends RouletteItem {
   originalTitle: string
   year: number
   runtime: number | null
@@ -19,22 +19,22 @@ interface Catalog {
   source: string
   genres: string[]
   moods: string[]
-  items: Omit<Movie, 'image'>[]
+  items: Omit<Work, 'image'>[]
 }
 
 const data = raw as unknown as Catalog
 
-export const MOVIES: Movie[] = data.items.map((m) => ({ ...m, image: m.poster }))
+export const WORKS: Work[] = data.items.map((m) => ({ ...m, image: m.poster }))
 
-export const MOVIES_BY_ID = new Map(MOVIES.map((m) => [m.id, m]))
+export const WORKS_BY_ID = new Map(WORKS.map((m) => [m.id, m]))
 
 /** Genres réellement présents dans le catalogue, triés pour l'affichage. */
-export const GENRES: string[] = [...new Set(MOVIES.flatMap((m) => m.genres))].sort((a, b) =>
+export const GENRES: string[] = [...new Set(WORKS.flatMap((m) => m.genres))].sort((a, b) =>
   a.localeCompare(b, 'fr'),
 )
 
 /** `true` si les données viennent de TMDB (affiches HD + notes). */
-export const HAS_RATINGS = MOVIES.some((m) => m.rating != null)
+export const HAS_RATINGS = WORKS.some((m) => m.rating != null)
 
 /** Humeurs présentes dans le catalogue, dans l'ordre d'affichage voulu. */
 export const MOOD_LABELS: Record<string, { emoji: string; label: string; adjective: string }> = {
@@ -82,7 +82,7 @@ export const moodAdjective = (id: string) => MOOD_LABELS[id]?.adjective ?? id
 export const plural = (n: number, word: string) => `${n} ${word}${n > 1 ? 's' : ''}`
 
 export const MOODS: string[] = Object.keys(MOOD_LABELS).filter((id) =>
-  MOVIES.some((m) => m.moods.includes(id)),
+  WORKS.some((m) => m.moods.includes(id)),
 )
 
 export const moodLabel = (id: string) => MOOD_LABELS[id]?.label ?? id

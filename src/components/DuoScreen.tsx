@@ -6,7 +6,7 @@ import { CompatibilityScreen } from './CompatibilityScreen'
 import { RouletteScreen } from './RouletteScreen'
 import { Poster } from './Poster'
 import { IconCheck } from './icons'
-import { MOVIES, MOVIES_BY_ID, plural, type Movie } from '../movies/catalog'
+import { WORKS, WORKS_BY_ID, plural, type Work } from '../movies/catalog'
 import { explain, match, matchLabel, type MatchResult, type Participant, type Relaxation, type ScoredMovie, type Wishes } from '../movies/matching'
 import { buildDuoTaste, buildProfile, EMPTY_SIGNALS, type Affinity, type DuoTaste, type Signals, type TasteProfile } from '../movies/taste'
 import { QuickContext } from './QuickContext'
@@ -48,7 +48,7 @@ interface Props {
   signals: Signals
   onRate: (movieId: string, verdict: Verdict) => void
   onRefuse: (movieId: string) => void
-  onOpenDetails: (m: Movie) => void
+  onOpenDetails: (m: Work) => void
 }
 
 /**
@@ -460,8 +460,8 @@ function DuoSession({
   // construire un profil par personne PUIS le profil du duo.
   const [tasteSignals, setTasteSignals] = useState<Record<string, Signals>>({})
   const [nights, setNights] = useState<{ sessionId: string; movieId: string }[]>([])
-  const [result, setResult] = useState<Movie | null>(null)
-  const [tonight, setTonight] = useState<Movie | null>(null)
+  const [result, setResult] = useState<Work | null>(null)
+  const [tonight, setTonight] = useState<Work | null>(null)
 
   const partner = duo.members.find((m) => m.userId !== profile.id)
 
@@ -602,7 +602,7 @@ function DuoSession({
     if (!participants || participants.some((p) => !p.wishes)) return null
     // L'identifiant de session sert de graine : les deux téléphones calculent
     // le même pool, et il change à chaque nouvelle soirée.
-    return match(MOVIES, participants, session?.id ?? '')
+    return match(WORKS, participants, session?.id ?? '')
   }, [participants, session?.id])
 
   const names = useMemo(
@@ -679,7 +679,7 @@ function DuoSession({
   useEffect(() => {
     // Jamais le résultat d'une session close : il appartient au passé.
     if (isHost || result || !session?.resultMovieId || session.status === 'decided') return
-    const movie = MOVIES_BY_ID.get(session.resultMovieId)
+    const movie = WORKS_BY_ID.get(session.resultMovieId)
     if (movie) setResult(movie)
   }, [isHost, result, session?.resultMovieId, session?.status])
 
@@ -691,7 +691,7 @@ function DuoSession({
   const pendingFeedback = useMemo(() => {
     const mine = signals.ratings
     const night = nights.find((n) => !mine[n.movieId])
-    return night ? { ...night, movie: MOVIES_BY_ID.get(night.movieId) } : null
+    return night ? { ...night, movie: WORKS_BY_ID.get(night.movieId) } : null
   }, [nights, signals.ratings])
 
   const answerFeedback = useCallback(
@@ -705,7 +705,7 @@ function DuoSession({
   )
 
   const chooseMovie = useCallback(
-    (movie: Movie | null) => {
+    (movie: Work | null) => {
       setTonight(movie)
       if (movie && session) {
         recordSignal(profile.id, 'chosen', { movieId: movie.id })
@@ -900,13 +900,13 @@ function DuoHome({
   duoTaste: DuoTaste | null
   /** Les deux portraits individuels, quand Venn en sait assez sur les deux. */
   silhouettes: { name: string; moods: Affinity[] }[] | null
-  feedback: Movie | null
+  feedback: Work | null
   onFeedback: (v: Verdict) => void
   onSkipFeedback: () => void
-  onOpenDetails: (m: Movie) => void
+  onOpenDetails: (m: Work) => void
   onLeaveDuo: () => void
 }) {
-  const last = lastMovieId ? MOVIES_BY_ID.get(lastMovieId) : undefined
+  const last = lastMovieId ? WORKS_BY_ID.get(lastMovieId) : undefined
   const ordered = [...duo.members].sort((a) => (a.userId === meId ? -1 : 1))
 
   return (

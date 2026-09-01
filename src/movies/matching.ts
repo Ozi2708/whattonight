@@ -1,4 +1,4 @@
-import { decadeOf, elide, genreWithArticle, moodAdjective, type Movie } from './catalog'
+import { decadeOf, elide, genreWithArticle, moodAdjective, type Work } from './catalog'
 import type { DuoTaste, TasteProfile } from './taste'
 
 /**
@@ -53,7 +53,7 @@ export interface Participant {
 }
 
 export interface ScoredMovie {
-  movie: Movie
+  movie: Work
   /** Score commun dans [0,1] — c'est lui qui classe le pool. */
   score: number
   /** Score individuel, par `userId`. Sert à expliquer le résultat. */
@@ -104,7 +104,7 @@ export interface Relaxation {
 }
 
 export interface MatchResult {
-  eligible: Movie[]
+  eligible: Work[]
   pool: ScoredMovie[]
   commonGround: CommonGround
   funnel: Funnel
@@ -115,7 +115,7 @@ export interface MatchResult {
 /* ----------------------------------------------------------- contraintes */
 
 /** Un film est éligible s'il satisfait les contraintes de TOUT LE MONDE. */
-function satisfies(movie: Movie, participants: Participant[]): boolean {
+function satisfies(movie: Work, participants: Participant[]): boolean {
   for (const p of participants) {
     const c = p.wishes.constraints
 
@@ -153,7 +153,7 @@ function axisScore(wanted: string[], actual: string[]): number | null {
 }
 
 /** Score de l'envie du soir seule — le profil n'y entre pas. */
-function tonightScore(movie: Movie, p: Participant): number {
+function tonightScore(movie: Work, p: Participant): number {
   const { preferences: pref } = p.wishes
   if (pref.surprise) return NEUTRAL
 
@@ -227,7 +227,7 @@ function profileScale(tonights: number[]): number {
  * zéro dès qu'une des deux personnes était nouvelle — c'est-à-dire presque
  * toujours au début — et le profil de l'autre ne servait plus à rien.
  */
-function profileValue(movie: Movie, p: Participant): number | null {
+function profileValue(movie: Work, p: Participant): number | null {
   const taste = p.taste
   if (!taste) return null
   const { preferences: pref } = p.wishes
@@ -328,7 +328,7 @@ const POOL_MIN = 8
  *    réponse est « les 100 ».
  */
 function buildPool(
-  eligible: Movie[],
+  eligible: Work[],
   participants: Participant[],
   rnd: () => number,
 ): ScoredMovie[] {
@@ -450,7 +450,7 @@ const runtimeLabel = (m: number) => `${Math.floor(m / 60)}h${String(m % 60).padS
  * chiffre ce que chaque assouplissement rapporterait, et c'est la personne
  * concernée qui tranche.
  */
-function findRelaxations(movies: Movie[], participants: Participant[]): Relaxation[] {
+function findRelaxations(movies: Work[], participants: Participant[]): Relaxation[] {
   const out: Relaxation[] = []
 
   const countWith = (userId: string, next: Constraints) => {
@@ -533,7 +533,7 @@ function findRelaxations(movies: Movie[], participants: Participant[]): Relaxati
  *              identique sur les deux téléphones, et différemment d'un soir
  *              à l'autre.
  */
-export function match(movies: Movie[], participants: Participant[], seed = ''): MatchResult {
+export function match(movies: Work[], participants: Participant[], seed = ''): MatchResult {
   const anyUnseenOnly = participants.some((p) => p.wishes.constraints.unseenOnly)
   const unseen = anyUnseenOnly
     ? movies.filter((m) => !participants.some((p) => p.seen.has(m.id))).length

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { Poster } from './Poster'
-import { MOVIES, formatRuntime, type Movie } from '../movies/catalog'
+import { WORKS, formatRuntime, type Work } from '../movies/catalog'
 import type { Verdict } from '../core/types'
 
 const ANSWERS: { verdict: Verdict | null; emoji: string; label: string }[] = [
@@ -26,12 +26,12 @@ const DECK_SIZE = 15
  * plus connu au moins connu, et on ne peut rien apprendre d'un film que la
  * personne n'a pas vu.
  */
-function buildDeck(alreadyRated: Set<string>): Movie[] {
-  const pool = MOVIES.filter((m) => !alreadyRated.has(m.id))
+function buildDeck(alreadyRated: Set<string>): Work[] {
+  const pool = WORKS.filter((m) => !alreadyRated.has(m.id))
   const covered = new Map<string, number>()
-  const deck: Movie[] = []
+  const deck: Work[] = []
 
-  const gain = (m: Movie) =>
+  const gain = (m: Work) =>
     [...m.genres, ...m.moods].reduce((sum, k) => sum + 1 / (1 + (covered.get(k) ?? 0) * 2), 0)
 
   const remaining = [...pool]

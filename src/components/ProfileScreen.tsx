@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Poster } from './Poster'
 import { InstallCard } from './InstallCard'
 import { IdentityCard } from './IdentityCard'
-import { MOVIES, MOVIES_BY_ID, formatRuntime, type Movie } from '../movies/catalog'
+import { WORKS, WORKS_BY_ID, formatRuntime, type Work } from '../movies/catalog'
 import { CATEGORIES, MOVIES_CATEGORY } from '../core/categories'
 import { library } from '../core/library'
 import { TasteSection } from './TasteSection'
@@ -13,7 +13,7 @@ interface Props {
   favorites: Set<string>
   lastPicked: string | null
   taste: TasteProfile
-  onOpen: (m: Movie) => void
+  onOpen: (m: Work) => void
   onDiscover: () => void
   onAdjust: (key: string, value: number) => void
   onResetAdjustments: () => void
@@ -30,8 +30,8 @@ export function ProfileScreen({
   onResetAdjustments,
 }: Props) {
   const [confirming, setConfirming] = useState(false)
-  const progress = Math.round((seen.size / MOVIES.length) * 100)
-  const last = lastPicked ? MOVIES_BY_ID.get(lastPicked) : undefined
+  const progress = Math.round((seen.size / WORKS.length) * 100)
+  const last = lastPicked ? WORKS_BY_ID.get(lastPicked) : undefined
 
   return (
     <div className="px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-6">
@@ -55,7 +55,7 @@ export function ProfileScreen({
           <div>
             <p className="text-[28px] leading-none font-semibold">
               {seen.size}
-              <span className="text-[18px] text-muted"> / {MOVIES.length}</span>
+              <span className="text-[18px] text-muted"> / {WORKS.length}</span>
             </p>
             <p className="mt-1.5 text-[13px] text-muted">films vus</p>
           </div>
@@ -63,7 +63,7 @@ export function ProfileScreen({
 
         <div className="mt-6 grid grid-cols-2 gap-3">
           <Stat value={favorites.size} label={favorites.size > 1 ? 'favoris' : 'favori'} />
-          <Stat value={MOVIES.length - seen.size} label="restants" />
+          <Stat value={WORKS.length - seen.size} label="restants" />
         </div>
       </div>
 

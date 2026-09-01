@@ -1,6 +1,6 @@
 import { motion } from 'motion/react'
 import { Poster } from './Poster'
-import type { Movie } from '../movies/catalog'
+import type { Work } from '../movies/catalog'
 import type { Verdict } from '../core/types'
 
 const ANSWERS: { verdict: Verdict; emoji: string; label: string }[] = [
@@ -11,7 +11,7 @@ const ANSWERS: { verdict: Verdict; emoji: string; label: string }[] = [
 ]
 
 interface Props {
-  movie: Movie
+  movie: Work
   onAnswer: (verdict: Verdict) => void
   onSkip: () => void
 }

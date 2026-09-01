@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { Poster } from './Poster'
-import { MOOD_LABELS, type Movie } from '../movies/catalog'
+import { MOOD_LABELS, type Work } from '../movies/catalog'
 import { EMPTY_SHAPE, Signature } from './Signature'
 import type { TasteProfile } from '../movies/taste'
 
 interface Props {
   profile: TasteProfile
-  onOpen: (m: Movie) => void
+  onOpen: (m: Work) => void
   /** Ouvre le module « Aide Venn à mieux te connaître ». */
   onDiscover: () => void
   /** Correction manuelle : clé de genre ou d'humeur, décalage dans [-1, 1]. */
@@ -264,7 +264,7 @@ function EmptyTaste({ onDiscover }: { onDiscover: () => void }) {
  * Les affiches en éventail plutôt qu'en liste : elles se lisent comme une main
  * de cartes, et c'est l'image qui parle, pas le titre.
  */
-function PosterFan({ movies, onOpen }: { movies: Movie[]; onOpen: (m: Movie) => void }) {
+function PosterFan({ movies, onOpen }: { movies: Work[]; onOpen: (m: Work) => void }) {
   const shown = movies.slice(0, 5)
   const middle = (shown.length - 1) / 2
 

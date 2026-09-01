@@ -1,4 +1,4 @@
-import { decadeOf, type Movie } from './catalog'
+import { decadeOf, type Work } from './catalog'
 
 export interface Filters {
   unseenOnly: boolean
@@ -25,7 +25,7 @@ export const DECADE_OPTIONS = [
   { label: '2020s', value: '2020' },
 ] as const
 
-export function applyFilters(movies: Movie[], filters: Filters, seen: Set<string>): Movie[] {
+export function applyFilters(movies: Work[], filters: Filters, seen: Set<string>): Work[] {
   return movies.filter((m) => {
     if (filters.unseenOnly && seen.has(m.id)) return false
     if (filters.genres.length && !m.genres.some((g) => filters.genres.includes(g))) return false

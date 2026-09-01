@@ -1,4 +1,4 @@
-import { MOVIES, MOVIES_BY_ID, MOOD_LABELS, genreWithArticle, type Movie } from './catalog'
+import { WORKS, WORKS_BY_ID, MOOD_LABELS, genreWithArticle, type Work } from './catalog'
 import type { Verdict } from '../core/types'
 
 /**
@@ -95,7 +95,7 @@ export interface Insight {
   /** Titre court de la remarque. */
   text: string
   /** Films qui la justifient — l'utilisateur doit pouvoir vérifier. */
-  movies: Movie[]
+  movies: Work[]
 }
 
 export interface TasteProfile {
@@ -113,7 +113,7 @@ export interface TasteProfile {
   /** Phrase de portrait, ou `null` si la matière ne suffit pas. */
   sentence: string | null
   /** Affiches qui représentent la personne. */
-  representative: Movie[]
+  representative: Work[]
   /** « Ton côté inattendu » — uniquement des remarques vérifiables. */
   insights: Insight[]
 }
@@ -121,7 +121,7 @@ export interface TasteProfile {
 /* -------------------------------------------------------------- collecte */
 
 interface Observation {
-  movie: Movie
+  movie: Work
   value: number
   weight: number
 }
@@ -137,7 +137,7 @@ function observe(signals: Signals): Observation[] {
   const best = new Map<string, Observation>()
 
   const add = (id: string, value: number, weight: number) => {
-    const movie = MOVIES_BY_ID.get(id)
+    const movie = WORKS_BY_ID.get(id)
     if (!movie) return
     const current = best.get(id)
     if (current && current.weight >= weight) return
@@ -187,7 +187,7 @@ function levelOf(score: number): Affinity['level'] {
  */
 function affinities(
   obs: Observation[],
-  pick: (m: Movie) => string[],
+  pick: (m: Work) => string[],
   label: (key: string) => { label: string; emoji?: string },
   adjustments: Record<string, number>,
 ): Affinity[] {
@@ -305,8 +305,8 @@ function findInsights(signals: Signals, obs: Observation[], genres: Affinity[]):
   const out: Insight[] = []
   const loved = Object.entries(signals.ratings)
     .filter(([, v]) => v === 'loved')
-    .map(([id]) => MOVIES_BY_ID.get(id))
-    .filter((m): m is Movie => !!m)
+    .map(([id]) => WORKS_BY_ID.get(id))
+    .filter((m): m is Work => !!m)
 
   // 1. Un genre peu fréquenté, mais dont les rares films sont adorés.
   const dominant = new Set(genres.slice(0, 2).map((g) => g.key))
@@ -324,7 +324,7 @@ function findInsights(signals: Signals, obs: Observation[], genres: Affinity[]):
   }
 
   // 2. Des films longs, malgré tout.
-  const catalogMean = MOVIES.reduce((a, m) => a + (m.runtime ?? 0), 0) / MOVIES.length
+  const catalogMean = WORKS.reduce((a, m) => a + (m.runtime ?? 0), 0) / WORKS.length
   const longLoved = loved.filter((m) => (m.runtime ?? 0) >= catalogMean + 20)
   if (loved.length >= 4 && longLoved.length / loved.length >= 0.5) {
     out.push({
@@ -375,8 +375,8 @@ export function buildProfile(signals: Signals): TasteProfile {
     ...signals.chosen,
   ]
     .filter((id, i, all) => all.indexOf(id) === i)
-    .map((id) => MOVIES_BY_ID.get(id))
-    .filter((m): m is Movie => !!m)
+    .map((id) => WORKS_BY_ID.get(id))
+    .filter((m): m is Work => !!m)
     .slice(0, 5)
 
   return {
@@ -393,7 +393,7 @@ export function buildProfile(signals: Signals): TasteProfile {
   }
 }
 
-const GENRE_KEYS = new Set(MOVIES.flatMap((m) => m.genres))
+const GENRE_KEYS = new Set(WORKS.flatMap((m) => m.genres))
 const MOOD_KEYS = new Set(Object.keys(MOOD_LABELS))
 
 const filterKeys = (map: Record<string, number>, allowed: Set<string>) =>
@@ -403,9 +403,9 @@ const filterKeys = (map: Record<string, number>, allowed: Set<string>) =>
 
 export interface DuoTaste {
   /** Films que les deux ont aimés ou adorés. */
-  agreements: Movie[]
+  agreements: Work[]
   /** Films sur lesquels ils se sont franchement opposés. */
-  clashes: Movie[]
+  clashes: Work[]
   /** Ce qui marche pour eux DEUX, pas la somme de leurs goûts. */
   genres: Affinity[]
   moods: Affinity[]
@@ -433,13 +433,13 @@ const DUO_DEPTHS: { min: number; depth: Depth; label: string }[] = [
  */
 export function buildDuoTaste(a: Signals, b: Signals): DuoTaste {
   const shared: Observation[] = []
-  const agreements: Movie[] = []
-  const clashes: Movie[] = []
+  const agreements: Work[] = []
+  const clashes: Work[] = []
 
   for (const [id, va] of Object.entries(a.ratings)) {
     const vb = b.ratings[id]
     if (!vb) continue
-    const movie = MOVIES_BY_ID.get(id)
+    const movie = WORKS_BY_ID.get(id)
     if (!movie) continue
 
     const worst = Math.min(VERDICT_VALUE[va], VERDICT_VALUE[vb])
@@ -453,7 +453,7 @@ export function buildDuoTaste(a: Signals, b: Signals): DuoTaste {
   const together = a.chosen.filter((id) => b.chosen.includes(id))
   for (const id of together) {
     if (shared.some((o) => o.movie.id === id)) continue
-    const movie = MOVIES_BY_ID.get(id)
+    const movie = WORKS_BY_ID.get(id)
     if (movie) shared.push({ movie, value: 0.4, weight: WEIGHT.chosen })
   }
 

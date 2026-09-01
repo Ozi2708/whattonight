@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Poster } from './Poster'
-import type { Movie } from '../movies/catalog'
+import type { Work } from '../movies/catalog'
 
 const GAP = 14
 const PULLBACK_MS = 220
@@ -11,7 +11,7 @@ const easeOutCubic = (p: number) => 1 - Math.pow(1 - p, 3)
 const easeOutQuart = (p: number) => 1 - Math.pow(1 - p, 4)
 
 interface Props {
-  strip: Movie[]
+  strip: Work[]
   winnerIndex: number
   reduced: boolean
   onLanded: () => void
