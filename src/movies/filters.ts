@@ -1,4 +1,4 @@
-import { decadeOf, type Kind, type Work } from './catalog'
+import { decadeOf, isFrench, type Kind, type Work } from './catalog'
 import { isCovered } from './providers'
 
 export interface Filters {
@@ -16,6 +16,8 @@ export interface Filters {
   maxRuntime: number | null
   /** Décennies retenues ("1990", "2000"…) ; vide = toutes. */
   decades: string[]
+  /** Ne garder que les œuvres en français. */
+  frenchOnly: boolean
 }
 
 export const NO_FILTERS: Filters = {
@@ -25,6 +27,7 @@ export const NO_FILTERS: Filters = {
   genres: [],
   maxRuntime: null,
   decades: [],
+  frenchOnly: false,
 }
 
 export const RUNTIME_OPTIONS = [
@@ -61,6 +64,7 @@ export function applyFilters(
       if (m.runtime == null || m.runtime > filters.maxRuntime) return false
     }
     if (filters.decades.length && !filters.decades.includes(decadeOf(m.year))) return false
+    if (filters.frenchOnly && !isFrench(m)) return false
     return true
   })
 }
@@ -71,6 +75,7 @@ export function countActive(filters: Filters): number {
     (filters.unseenOnly ? 1 : 0) +
     (filters.genres.length ? 1 : 0) +
     (filters.maxRuntime != null ? 1 : 0) +
-    (filters.decades.length ? 1 : 0)
+    (filters.decades.length ? 1 : 0) +
+    (filters.frenchOnly ? 1 : 0)
   )
 }

@@ -26,6 +26,9 @@ export interface Work extends RouletteItem {
   poster: string | null
   posterSmall: string | null
   backdrop: string | null
+  /** Langue d'origine (ISO 639-1) et pays de production (ISO 3166-1). */
+  language: string | null
+  countries: string[]
   /** Séries uniquement. */
   seasons: number | null
   episodes: number | null
@@ -49,6 +52,16 @@ export const WORKS_BY_ID = new Map(WORKS.map((m) => [m.id, m]))
 export const CANON = WORKS.filter((w) => w.canon)
 
 export const worksOfKind = (kind: Kind) => WORKS.filter((w) => w.kind === kind)
+
+/**
+ * Œuvre française : la LANGUE d'origine, pas le pays de production.
+ *
+ * Cinquante-quatre films du catalogue portent la France dans leurs pays de
+ * production — Terminator 2, Love Actually, Taken, Paddington. Ce sont des
+ * montages financiers, personne ne les appellerait des films français. La
+ * langue tranche sans ambiguïté : 33 films et 7 séries.
+ */
+export const isFrench = (w: Work) => w.language === 'fr'
 
 /**
  * Genres réellement présents au catalogue.

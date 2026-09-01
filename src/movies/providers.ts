@@ -43,6 +43,22 @@ export const SERVICES: Service[] = [
   { id: 'sfr', label: 'SFR Play', color: '#e2001a' },
 ]
 
+/**
+ * La location, traitée comme un service qu'on accepte ou non.
+ *
+ * Ce n'est pas un abonnement, mais c'est la même question posée à
+ * l'utilisateur : « est-ce que je peux regarder ça ce soir ? ». Sans elle, 106
+ * œuvres du catalogue — dont Amélie Poulain et Pulp Fiction — restaient
+ * inatteignables quoi qu'on coche, ce qui se lisait comme un bug.
+ */
+export const RENTAL = 'rental'
+
+export const RENTAL_SERVICE: Service = {
+  id: RENTAL,
+  label: 'Location (payant)',
+  color: '#8b8b99',
+}
+
 const SERVICE_BY_ID = new Map(SERVICES.map((s) => [s.id, s]))
 export const serviceLabel = (id: string) => SERVICE_BY_ID.get(id)?.label ?? id
 
@@ -94,8 +110,11 @@ export function unreachable(ids: string[]): { rental: number; nowhere: number } 
 /** L'œuvre est-elle incluse dans au moins un des abonnements donnés ? */
 export function isCovered(id: string, subscriptions: string[]): boolean {
   if (!subscriptions.length) return true
-  const s = data.works[id]?.s
-  return Boolean(s?.some((x) => subscriptions.includes(x)))
+  const entry = data.works[id]
+  if (entry?.s?.some((x) => subscriptions.includes(x))) return true
+  // Accepter la location rend accessibles les œuvres qu'aucun abonnement ne
+  // couvre — mais elle ne rend pas accessible ce qui n'existe nulle part.
+  return subscriptions.includes(RENTAL) && Boolean(entry?.p)
 }
 
 /**

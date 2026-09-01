@@ -67,6 +67,23 @@ export function FilterSheet({ open, onClose, filters, onChange, matches }: Props
           </div>
         </Section>
 
+        <Section title="Origine">
+          <div className="flex flex-wrap gap-2">
+            <Chip
+              active={!filters.frenchOnly}
+              onClick={() => onChange({ ...filters, frenchOnly: false })}
+            >
+              Peu importe
+            </Chip>
+            <Chip
+              active={filters.frenchOnly}
+              onClick={() => onChange({ ...filters, frenchOnly: true })}
+            >
+              🇫🇷 En français
+            </Chip>
+          </div>
+        </Section>
+
         <Section title="Époque">
           <div className="flex flex-wrap gap-2">
             <Chip

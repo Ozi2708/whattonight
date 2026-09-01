@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { SERVICES, unreachable } from '../movies/providers'
+import { RENTAL, RENTAL_SERVICE, SERVICES, unreachable } from '../movies/providers'
 import { plural } from '../movies/catalog'
 
 interface Props {
@@ -63,11 +63,49 @@ export function ServicesCard({ services, onChange, covered, total, allIds }: Pro
         })}
       </div>
 
+      {/* La location est posée à part : ce n'est pas un abonnement, c'est une
+          disposition à payer. La mélanger aux logos laisserait croire qu'elle
+          est gratuite. */}
+      <div className="mt-3 border-t border-line/70 pt-3">
+        <button
+          type="button"
+          onClick={() => toggle(RENTAL)}
+          aria-pressed={services.includes(RENTAL)}
+          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition-colors ${
+            services.includes(RENTAL)
+              ? 'border-gold/50 bg-gold/10'
+              : 'border-line bg-surface/60'
+          }`}
+        >
+          <span>
+            <span
+              className={`block text-[13.5px] font-medium ${services.includes(RENTAL) ? 'text-gold' : ''}`}
+            >
+              {RENTAL_SERVICE.label}
+            </span>
+            <span className="mt-0.5 block text-[11.5px] text-muted">
+              J’accepte de louer un film pour la soirée
+            </span>
+          </span>
+          <span
+            className={`h-6 w-10 shrink-0 rounded-full p-0.5 transition-colors ${
+              services.includes(RENTAL) ? 'bg-gold' : 'bg-line'
+            }`}
+          >
+            <span
+              className={`block h-5 w-5 rounded-full bg-ink transition-transform ${
+                services.includes(RENTAL) ? 'translate-x-4' : ''
+              }`}
+            />
+          </span>
+        </button>
+      </div>
+
       <motion.p
         key={covered}
         initial={{ opacity: 0.4 }}
         animate={{ opacity: 1 }}
-        className="mt-4 border-t border-line/70 pt-3.5 text-[13px] text-cream/75"
+        className="mt-3.5 text-[13px] text-cream/75"
       >
         {services.length === 0 ? (
           <span className="text-muted">
@@ -85,13 +123,11 @@ export function ServicesCard({ services, onChange, covered, total, allIds }: Pro
         )}
       </motion.p>
 
-      {services.length > 0 && (rental > 0 || nowhere > 0) && (
+      {services.length > 0 && (
         <p className="mt-2 text-[12px] leading-relaxed text-muted/80">
-          Même en cochant tout, {plural(rental + nowhere, 'œuvre')} rester
-          {rental + nowhere > 1 ? 'ont' : 'a'} hors d’atteinte :{' '}
-          {rental > 0 && <>{rental} uniquement en location ou à l’achat</>}
-          {rental > 0 && nowhere > 0 && ', '}
-          {nowhere > 0 && <>{nowhere} nulle part en France</>}.
+          {services.includes(RENTAL)
+            ? `Même en acceptant la location, ${plural(nowhere, 'œuvre')} reste${nowhere > 1 ? 'nt' : ''} introuvable${nowhere > 1 ? 's' : ''} en France — surtout des films pas encore sortis.`
+            : `${plural(rental, 'œuvre')} n’${rental > 1 ? 'existent' : 'existe'} sur aucun abonnement — dont Amélie Poulain et Pulp Fiction. Accepte la location pour les débloquer.`}
         </p>
       )}
     </section>

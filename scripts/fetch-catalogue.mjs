@@ -118,6 +118,12 @@ async function fetchOne(entry) {
     poster: d.poster_path ? `${IMG}/w500${d.poster_path}` : null,
     posterSmall: d.poster_path ? `${IMG}/w342${d.poster_path}` : null,
     backdrop: d.backdrop_path ? `${IMG}/w1280${d.backdrop_path}` : null,
+    // Origine : la langue d'origine et les pays de production. Les deux, car
+    // aucun ne suffit — un film français peut être tourné en anglais, et une
+    // coproduction internationale porte souvent la France sans être perçue
+    // comme française.
+    language: d.original_language ?? null,
+    countries: (d.production_countries ?? []).map((c) => c.iso_3166_1),
     seasons: isTv ? (d.number_of_seasons ?? null) : null,
     episodes: isTv ? (d.number_of_episodes ?? null) : null,
     ended: isTv ? d.status === 'Ended' || d.status === 'Canceled' : null,
@@ -206,6 +212,8 @@ for (const e of seed) {
     // trop éloignés pour servir.
     genres: e.genres,
     moods: e.moods,
+    language: d.language,
+    countries: d.countries,
     rating: d.rating,
     director: d.director,
     overview: d.overview,
