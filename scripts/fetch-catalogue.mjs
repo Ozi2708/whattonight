@@ -318,6 +318,7 @@ for (const [nom, absent] of champs) {
 }
 console.log(`  ${'durée (films)'.padEnd(24)} ${films.length - manque(films, (i) => i.runtime == null)} / ${films.length}`)
 console.log(`  ${'durée (épisode)'.padEnd(24)} ${series.length - manque(series, (i) => i.runtime == null)} / ${series.length}`)
+console.log(`  ${'en français'.padEnd(24)} ${items.filter((i) => i.language === 'fr').length} / ${items.length}`)
 
 // Un identifiant en double ferait fusionner deux œuvres dans la bibliothèque.
 const ids = new Set(items.map((i) => i.id))
