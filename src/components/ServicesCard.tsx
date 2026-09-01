@@ -1,5 +1,5 @@
 import { motion } from 'motion/react'
-import { SERVICES } from '../movies/providers'
+import { SERVICES, unreachable } from '../movies/providers'
 import { plural } from '../movies/catalog'
 
 interface Props {
@@ -8,6 +8,8 @@ interface Props {
   /** Nombre d'œuvres réellement accessibles avec ces abonnements. */
   covered: number
   total: number
+  /** Identifiants de tout le catalogue, pour expliquer ce qui reste hors d'atteinte. */
+  allIds: string[]
 }
 
 /**
@@ -20,7 +22,10 @@ interface Props {
  * Ne rien cocher est une réponse valable, et c'est le défaut : Venn propose
  * alors tout le catalogue. Le filtre ne s'active que si on le renseigne.
  */
-export function ServicesCard({ services, onChange, covered, total }: Props) {
+export function ServicesCard({ services, onChange, covered, total, allIds }: Props) {
+  // Cocher tous les services ne donne jamais 100 % : certaines œuvres ne sont
+  // en abonnement nulle part. Le dire évite de faire passer l'écart pour un bug.
+  const { rental, nowhere } = unreachable(allIds)
   const toggle = (id: string) =>
     onChange(services.includes(id) ? services.filter((s) => s !== id) : [...services, id])
 
@@ -79,6 +84,16 @@ export function ServicesCard({ services, onChange, covered, total }: Props) {
           </>
         )}
       </motion.p>
+
+      {services.length > 0 && (rental > 0 || nowhere > 0) && (
+        <p className="mt-2 text-[12px] leading-relaxed text-muted/80">
+          Même en cochant tout, {plural(rental + nowhere, 'œuvre')} rester
+          {rental + nowhere > 1 ? 'ont' : 'a'} hors d’atteinte :{' '}
+          {rental > 0 && <>{rental} uniquement en location ou à l’achat</>}
+          {rental > 0 && nowhere > 0 && ', '}
+          {nowhere > 0 && <>{nowhere} nulle part en France</>}.
+        </p>
+      )}
     </section>
   )
 }

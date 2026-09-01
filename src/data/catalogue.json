@@ -11244,35 +11244,6 @@
    "ended": null
   },
   {
-   "id": "norm-of-the-north-family-vacation",
-   "kind": "movie",
-   "canon": false,
-   "tmdbId": 610045,
-   "title": "Norm of the North: Family Vacation",
-   "originalTitle": "Norm of the North: Family Vacation",
-   "year": 2020,
-   "runtime": 90,
-   "genres": [
-    "Crime",
-    "Drame",
-    "Thriller"
-   ],
-   "moods": [
-    "intense",
-    "stressant",
-    "surprenant"
-   ],
-   "rating": 5.2,
-   "director": "Anthony Bell",
-   "overview": "Accablé de ses fonctions royales, Norm s'efforce de gagner du temps pour son royaume et pour sa famille. Lorsque sa couronne est mystérieusement volée, il doit entreprendre un voyage non seulement pour trouver la couronne, mais également pour rétablir ses relations avec sa famille.",
-   "poster": "https://image.tmdb.org/t/p/w500/ohWU8bPbAK5WEAboIabivld9Hyw.jpg",
-   "posterSmall": "https://image.tmdb.org/t/p/w342/ohWU8bPbAK5WEAboIabivld9Hyw.jpg",
-   "backdrop": "https://image.tmdb.org/t/p/w1280/A2Z4AOYgdhSuFAt1LRMlEDfwSWD.jpg",
-   "seasons": null,
-   "episodes": null,
-   "ended": null
-  },
-  {
    "id": "palm-springs",
    "kind": "movie",
    "canon": false,
@@ -11469,6 +11440,35 @@
    "poster": "https://image.tmdb.org/t/p/w500/86UEvw3t8amtxepQRtBiQHkk954.jpg",
    "posterSmall": "https://image.tmdb.org/t/p/w342/86UEvw3t8amtxepQRtBiQHkk954.jpg",
    "backdrop": "https://image.tmdb.org/t/p/w1280/hClLP88yMIuhslwSVxtYrvWmxfp.jpg",
+   "seasons": null,
+   "episodes": null,
+   "ended": null
+  },
+  {
+   "id": "bac-nord",
+   "kind": "movie",
+   "canon": false,
+   "tmdbId": 637534,
+   "title": "BAC Nord",
+   "originalTitle": "BAC Nord",
+   "year": 2021,
+   "runtime": 105,
+   "genres": [
+    "Crime",
+    "Drame",
+    "Thriller"
+   ],
+   "moods": [
+    "intense",
+    "stressant",
+    "surprenant"
+   ],
+   "rating": 7.4,
+   "director": "Cédric Jimenez",
+   "overview": "2012. Les quartiers Nord de Marseille détiennent un triste record : la zone au taux de criminalité le plus élevé de France. Poussée par sa hiérarchie, la BAC Nord, brigade de terrain, cherche sans cesse à améliorer ses résultats. Dans un secteur à haut risque, les flics adaptent leurs méthodes, franchissant parfois la ligne jaune. Jusqu'au jour où le système judiciaire se retourne contre eux…",
+   "poster": "https://image.tmdb.org/t/p/w500/r2NnRp4mi4G3e0x9zINQIcnGNd8.jpg",
+   "posterSmall": "https://image.tmdb.org/t/p/w342/r2NnRp4mi4G3e0x9zINQIcnGNd8.jpg",
+   "backdrop": "https://image.tmdb.org/t/p/w1280/vkIJ2QgcKMJRvi6pBW4Tr2kgLdy.jpg",
    "seasons": null,
    "episodes": null,
    "ended": null

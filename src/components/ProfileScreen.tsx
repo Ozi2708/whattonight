@@ -58,6 +58,7 @@ export function ProfileScreen({
         onChange={onSetServices}
         covered={WORKS.filter((w) => isCovered(w.id, services)).length}
         total={WORKS.length}
+        allIds={WORKS.map((w) => w.id)}
       />
 
       <InstallCard />

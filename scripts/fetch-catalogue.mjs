@@ -238,6 +238,51 @@ writeFileSync(
   ) + '\n',
 )
 
+/* ────────────────────────────────────────── contrôle des titres */
+
+/**
+ * Le titre obtenu ressemble-t-il à celui demandé ?
+ *
+ * Les autres contrôles attrapent les making-of et les écarts d'année. Ils ne
+ * voient pas un film SANS RAPPORT dont l'année coïncide : « BAC Nord », noté
+ * 2020 dans la graine alors qu'il est de 2021, était devenu « Norm of the
+ * North: Family Vacation » (2020). Comparer les titres l'aurait vu tout de
+ * suite.
+ *
+ * Simple avertissement, pas une erreur : sept signalements sur huit sont des
+ * titres français légitimes — « Life Is Beautiful » devient « La vie est
+ * belle », « The Boy and the Heron » devient « Le Garçon et le Héron ».
+ */
+const bigrams = (s) => {
+  const t = s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/s+/g, ' ').trim()
+  const out = new Set()
+  for (let i = 0; i < t.length - 1; i++) out.add(t.slice(i, i + 2))
+  return out
+}
+
+function similar(a, b) {
+  const A = bigrams(a)
+  const B = bigrams(b)
+  if (!A.size || !B.size) return 0
+  let n = 0
+  for (const g of A) if (B.has(g)) n++
+  return (2 * n) / (A.size + B.size)
+}
+
+const douteux = []
+for (const e of seed) {
+  const d = cache[`${e.type}:${e.tmdbId}`]
+  if (!d) continue
+  const score = Math.max(similar(e.title, d.title), similar(e.title, d.originalTitle))
+  if (score < 0.5) douteux.push(`${e.title} (${e.year}) → « ${d.title} » (${d.year})`)
+}
+if (douteux.length) {
+  console.warn(`
+⚠ ${douteux.length} titre(s) très différent(s) du titre demandé — à vérifier :`)
+  douteux.forEach((x) => console.warn('     · ' + x))
+  console.warn('  (un titre français légitime déclenche souvent ce signal)')
+}
+
 /* ───────────────────────────────────────────────────────────── rapport */
 
 const films = items.filter((i) => i.kind === 'movie')

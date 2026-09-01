@@ -70,6 +70,27 @@ export const servicesOf = (id: string): string[] => data.works[id]?.s ?? []
 /** `true` si l'œuvre n'existe qu'en location ou à l'achat. */
 export const paidOnly = (id: string): boolean => Boolean(data.works[id]?.p)
 
+/**
+ * Ce qu'aucun abonnement ne peut atteindre.
+ *
+ * Cocher TOUS les services ne donne pas tout le catalogue, et ce n'est pas un
+ * bug : certaines œuvres ne sont nulle part en abonnement. Des classiques
+ * comme Amélie Poulain ou Pulp Fiction ne se trouvent qu'en location, et les
+ * films encore inédits ne se trouvent nulle part. L'écran doit le dire, sinon
+ * l'écart passe pour une erreur.
+ */
+export function unreachable(ids: string[]): { rental: number; nowhere: number } {
+  let rental = 0
+  let nowhere = 0
+  for (const id of ids) {
+    const e = data.works[id]
+    if (e?.s?.length) continue
+    if (e?.p) rental++
+    else nowhere++
+  }
+  return { rental, nowhere }
+}
+
 /** L'œuvre est-elle incluse dans au moins un des abonnements donnés ? */
 export function isCovered(id: string, subscriptions: string[]): boolean {
   if (!subscriptions.length) return true
