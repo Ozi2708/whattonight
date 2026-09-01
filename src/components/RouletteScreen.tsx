@@ -192,10 +192,31 @@ export function RouletteScreen({
             ← Retour
           </button>
         )}
-        <p className="text-[11px] font-semibold tracking-[0.2em] text-gold/70 uppercase">{eyebrow}</p>
-        <h1 className="mt-2 text-[30px] leading-[1.1] font-semibold tracking-tight text-balance">
-          {tonight ? 'Ce soir, c’est' : (heading ?? MOVIES_CATEGORY.question)}
-        </h1>
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="text-[11px] font-semibold tracking-[0.2em] text-gold/70 uppercase">
+            {eyebrow}
+          </p>
+          {/* Les réglages disparaissent avec le résultat : il faut un chemin
+              de retour, et il ne doit rien coûter en hauteur — d'où sa place
+              sur la ligne du bandeau, déjà présente et à moitié vide. */}
+          {result && !duo && !tonight && (
+            <button
+              type="button"
+              onClick={() => onResult(null)}
+              className="shrink-0 text-[12.5px] text-muted underline-offset-4 hover:text-cream hover:underline"
+            >
+              Changer de recherche
+            </button>
+          )}
+        </div>
+        {/* La question disparaît dès qu'un film est proposé : elle a reçu sa
+            réponse, et sur un écran de 667 px elle repoussait le bouton
+            « C'est parti » 87 px SOUS la barre d'onglets. */}
+        {!result && (
+          <h1 className="mt-2 text-[30px] leading-[1.1] font-semibold tracking-tight text-balance">
+            {tonight ? 'Ce soir, c’est' : (heading ?? MOVIES_CATEGORY.question)}
+          </h1>
+        )}
       </header>
 
       <div className="relative flex flex-1 flex-col justify-center py-3">
@@ -247,7 +268,10 @@ export function RouletteScreen({
         </AnimatePresence>
       </div>
 
-      {!tonight && phase !== 'spinning' && (
+      {/* Les réglages servent à CHERCHER. Une fois qu'un film est proposé, ils
+          ne font que pousser les actions hors de l'écran — et « Relancer »
+          couvre l'essentiel de ce qu'on voudrait changer. */}
+      {!tonight && !result && phase !== 'spinning' && (
         <div className="relative shrink-0 pb-4">
           {/* Les filtres solo n'ont pas de sens en duo : les envies ont déjà
               été exprimées par chacun, et une contrainte ne se modifie pas ici. */}
@@ -443,8 +467,10 @@ function ResultCard({
           src={movie.image}
           alt={movie.title}
           eager
-          className="w-[min(48vw,186px)] rounded-2xl border border-white/15 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.9)] ring-1 ring-gold/25"
-          style={{ aspectRatio: '2 / 3' }}
+          className="rounded-2xl border border-white/15 shadow-[0_24px_60px_-18px_rgba(0,0,0,0.9)] ring-1 ring-gold/25"
+          // Calée sur la hauteur : sur un écran court, une affiche dimensionnée
+          // à la largeur poussait les actions hors de l'écran.
+          style={{ aspectRatio: '2 / 3', height: 'min(32vh, 268px)', width: 'auto' }}
         />
       </button>
 
@@ -470,7 +496,7 @@ function ResultCard({
 
       {reasons ?? (
         movie.overview && (
-          <p className="mt-3 line-clamp-3 max-w-[22rem] text-[13.5px] leading-relaxed text-cream/65">
+          <p className="mt-3 line-clamp-2 max-w-[22rem] text-[13.5px] leading-relaxed text-cream/65">
             {movie.overview}
           </p>
         )
