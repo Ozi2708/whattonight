@@ -43,10 +43,20 @@ export const MOOD_IDS = [
   'stressant', 'spectaculaire', 'intelligent', 'chill', 'surprenant',
 ]
 
+/*
+ * Dix-sept genres décrivent le SUJET de l'œuvre. Deux décrivent son REGISTRE :
+ *
+ *   Blockbuster  Grosse production faite pour remplir les salles.
+ *   Confort      Une valeur sûre que presque tout le monde connaît et qu'on
+ *                peut remettre sans réfléchir. C'est de la NOTORIÉTÉ, pas du
+ *                ton — Hunger Games est un film confort et stressant, sans
+ *                contradiction. Pour demander une soirée calme, ce sont les
+ *                humeurs `chill` et `facile`, jamais ce genre.
+ */
 const GENRE_IDS = [
-  'Action', 'Animation', 'Aventure', 'Comédie', 'Crime', 'Drame', 'Familial',
-  'Fantastique', 'Guerre', 'Histoire', 'Horreur', 'Musique', 'Mystère',
-  'Romance', 'Science-Fiction', 'Thriller', 'Western',
+  'Action', 'Animation', 'Aventure', 'Blockbuster', 'Comédie', 'Confort', 'Crime',
+  'Drame', 'Familial', 'Fantastique', 'Guerre', 'Histoire', 'Horreur', 'Musique',
+  'Mystère', 'Romance', 'Science-Fiction', 'Thriller', 'Western',
 ]
 
 /** « On se pose » et « ça secoue » ne peuvent pas coexister. */
@@ -108,7 +118,7 @@ for (const w of works) {
 if (errors.length) {
   console.error(`\n✗ ${errors.length} problème(s) dans les humeurs :\n`)
   for (const e of errors) console.error('  · ' + e)
-  console.error('\nVoir la règle en tête de scripts/movies.moods.mjs.\n')
+  console.error('\nVoir la règle en tête de ce fichier.\n')
   process.exit(1)
 }
 

@@ -50,10 +50,22 @@ export const CANON = WORKS.filter((w) => w.canon)
 
 export const worksOfKind = (kind: Kind) => WORKS.filter((w) => w.kind === kind)
 
-/** Genres réellement présents dans le catalogue, triés pour l'affichage. */
-export const GENRES: string[] = [...new Set(WORKS.flatMap((m) => m.genres))].sort((a, b) =>
-  a.localeCompare(b, 'fr'),
-)
+/**
+ * Genres réellement présents au catalogue.
+ *
+ * « Confort » et « Blockbuster » passent en tête plutôt qu'à leur rang
+ * alphabétique : ils ne décrivent pas le SUJET du film mais son REGISTRE, et
+ * c'est souvent la première chose qu'on a en tête — « ce soir, une valeur
+ * sûre ». Les noyer entre Aventure et Crime les rendrait invisibles.
+ */
+const EN_TETE = ['Confort', 'Blockbuster']
+
+export const GENRES: string[] = [
+  ...EN_TETE.filter((g) => WORKS.some((w) => w.genres.includes(g))),
+  ...[...new Set(WORKS.flatMap((m) => m.genres))]
+    .filter((g) => !EN_TETE.includes(g))
+    .sort((a, b) => a.localeCompare(b, 'fr')),
+]
 
 /** `true` si les données viennent de TMDB (affiches HD + notes). */
 export const HAS_RATINGS = WORKS.some((m) => m.rating != null)
