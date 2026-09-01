@@ -119,8 +119,14 @@ function satisfies(movie: Work, participants: Participant[]): boolean {
   for (const p of participants) {
     const c = p.wishes.constraints
 
-    // Une durée inconnue ne doit pas passer un plafond en douce.
-    if (c.maxRuntime != null && (movie.runtime == null || movie.runtime > c.maxRuntime)) return false
+    // La durée d'une soirée ne se compare pas à celle d'un épisode : la
+    // contrainte ne vaut que pour les films. Sinon une limite de durée ferait
+    // disparaître toutes les séries, dont la durée d'épisode est presque
+    // toujours inconnue.
+    if (movie.kind === 'movie' && c.maxRuntime != null) {
+      // Une durée inconnue ne doit pas passer un plafond en douce.
+      if (movie.runtime == null || movie.runtime > c.maxRuntime) return false
+    }
 
     if (c.excludedGenres.some((g) => movie.genres.includes(g))) return false
 
@@ -192,6 +198,17 @@ function tonightScore(movie: Work, p: Participant): number {
 
 /** Plafond absolu de l'influence du profil, quels que soient les écarts. */
 const PROFILE_WEIGHT = 0.12
+
+/**
+ * Coup de pouce aux œuvres du canon.
+ *
+ * Elles sont choisies et étiquetées à la main ; le réservoir, non. À envie du
+ * soir égale, autant proposer celle dont on répond. Le bonus passe par le même
+ * terme borné que le profil, donc il hérite de la même garantie : il ne peut
+ * pas faire passer devant une œuvre qui correspond moins à ce qui a été
+ * demandé ce soir.
+ */
+const CANON_BONUS = 0.3
 
 /**
  * Échelle appliquée au profil, calculée sur le pool lui-même.
@@ -341,13 +358,16 @@ function buildPool(
       // Seuls ceux sur qui Venn a une opinion entrent dans le calcul.
       if (value !== null) profiles.push(value)
     }
+    // Profil et curation partagent le même terme : c'est ce qui leur fait
+    // partager la même borne, et donc la même garantie.
+    const signed = pairSigned(profiles) + (movie.canon ? CANON_BONUS : 0)
     return {
       movie,
       perUser,
       tonight: pairScore(Object.values(perUser)),
       // Le profil du duo se lit comme celui d'une personne : c'est le moins
       // bien servi qui commande, pas la moyenne.
-      profile: pairSigned(profiles),
+      profile: Math.max(-1, Math.min(1, signed)),
     }
   })
 

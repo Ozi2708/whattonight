@@ -56,7 +56,7 @@ export function friendlyError(error: unknown): string {
   if (/anonymous|signups? not allowed|provider.*disabled/i.test(raw)) {
     return 'Connexions anonymes désactivées. Dans Supabase : Authentication → Sign In / Providers → active « Anonymous sign-ins ».'
   }
-  if (/migration V3/i.test(raw)) return raw
+  if (/migration V[34]/i.test(raw)) return raw
   if (/relation .* does not exist|schema cache|does not exist/i.test(raw)) {
     return 'Les tables sont absentes : colle supabase/schema.sql dans le SQL Editor de Supabase, puis Run.'
   }

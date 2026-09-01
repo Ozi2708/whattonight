@@ -107,6 +107,7 @@ export default function App() {
             filters={filters}
             onOpenFilters={openFilters}
             onToggleUnseen={() => setFilters((f) => ({ ...f, unseenOnly: !f.unseenOnly }))}
+            onSetKind={(kind) => setFilters((f) => ({ ...f, kind }))}
             seen={seenSet}
             favorites={favoriteSet}
             history={history}

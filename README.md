@@ -1,8 +1,36 @@
-# Venn — V3
+# Venn — V4
 
 Venn aide deux personnes à trouver rapidement quelque chose dont elles ont
-**toutes les deux** envie. La V3 couvre les films : 100 titres triés sur le
-volet, 1990 → 2026.
+**toutes les deux** envie. La V4 couvre **511 films et 99 séries**, 1990 → 2026.
+
+## Le canon et le réservoir
+
+Deux objets, deux rôles, et il ne faut pas les confondre.
+
+| | Le canon | Le réservoir |
+| --- | --- | --- |
+| Taille | **100 films**, figée | 511 films + 99 séries |
+| Humeurs | écrites à la main, relues une par une | livrées puis vérifiées |
+| Progression | oui — c'est lui la collection | non |
+| Promesse | éditoriale | de choix |
+
+« Les 100 films à voir » reste la liste à compléter : la barre de progression
+ne compte que le canon, quelle que soit la vue ouverte. Le reste existe pour
+que la roulette ne tourne jamais en rond. Dans « Tous les films », les œuvres
+du canon portent un point doré, et elles reçoivent un léger bonus de
+classement — elles sont choisies et étiquetées à la main, le réservoir non.
+
+## Films et séries : deux tirages distincts
+
+Une soirée cherche un film **ou** une série, jamais les deux. L'hôte tranche à
+l'ouverture, et les deux personnes cherchent alors la même chose — sinon le
+croisement des envies ne veut plus rien dire.
+
+Une conséquence discrète mais importante : **la contrainte de durée ne
+s'applique qu'aux films.** « Moins de 2h » désigne la longueur d'une soirée,
+pas celle d'un épisode — et TMDB ne connaît la durée d'un épisode que pour une
+série sur six. L'appliquer aux séries les ferait toutes disparaître dès qu'une
+limite est posée.
 
 ```
     PERSONNE A          PERSONNE B

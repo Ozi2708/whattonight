@@ -33,12 +33,20 @@ export interface Duo {
  */
 export type SessionMode = 'quick' | 'precise'
 
+/**
+ * Ce qu'on regarde ce soir. Décidé par l'hôte à l'ouverture, comme le mode :
+ * les deux personnes doivent chercher la même chose, sinon le croisement n'a
+ * plus de sens.
+ */
+export type SessionKind = 'movie' | 'series'
+
 export interface Session {
   id: string
   duoId: string
   /** Hôte de la session : seul lui pilote la roulette. */
   createdBy: string
   mode: SessionMode
+  kind: SessionKind
   status: 'collecting' | 'ready' | 'decided'
   submittedCount: number
   resultMovieId: string | null
@@ -144,6 +152,7 @@ const toSession = (row: Record<string, unknown>): Session => ({
   duoId: row.duo_id as string,
   createdBy: row.created_by as string,
   mode: ((row.mode as string) ?? 'precise') as SessionMode,
+  kind: ((row.kind as string) ?? 'movie') as SessionKind,
   status: row.status as Session['status'],
   submittedCount: (row.submitted_count as number) ?? 0,
   resultMovieId: (row.result_movie_id as string | null) ?? null,
@@ -162,21 +171,24 @@ export async function createSession(
   duoId: string,
   userId: string,
   mode: SessionMode = 'precise',
+  kind: SessionKind = 'movie',
 ): Promise<Session> {
   const { data, error } = await client()
     .from('sessions')
-    .insert({ duo_id: duoId, created_by: userId, mode })
+    .insert({ duo_id: duoId, created_by: userId, mode, kind })
     .select()
     .single()
 
   if (!error) return toSession(data)
 
-  const missingColumn = /column .*mode.* does not exist|schema cache/i.test(error.message)
+  const missingColumn = /column .* does not exist|schema cache/i.test(error.message)
   if (!missingColumn) throw error
 
-  if (mode === 'quick') {
+  // Une colonne manquante ne doit jamais servir autre chose en silence : on
+  // ne retombe sur la V2 que si le choix demandé était déjà celui par défaut.
+  if (mode === 'quick' || kind === 'series') {
     throw new Error(
-      'Le mode « Choisis pour nous » demande la migration V3 : colle supabase/schema.v3.sql dans le SQL Editor de Supabase, puis Run.',
+      `${kind === 'series' ? 'Les séries demandent' : 'Le mode « Choisis pour nous » demande'} la migration V4 : colle supabase/schema.v4.sql dans le SQL Editor de Supabase, puis Run.`,
     )
   }
 

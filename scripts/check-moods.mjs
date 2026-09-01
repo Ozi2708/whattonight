@@ -11,8 +11,43 @@
  * ce sont des contradictions logiques. Un film ne peut pas à la fois se
  * regarder fatigué et tenir en haleine.
  */
-import { MOODS, MOOD_IDS } from './movies.moods.mjs'
-import { MOVIES } from './movies.seed.mjs'
+/*
+ * LA RÈGLE, puisque c'est ici qu'elle est appliquée :
+ *
+ *   UNE HUMEUR DÉCRIT CE QUE ÇA FAIT AU SPECTATEUR,
+ *   PAS LE RYTHME NI L'ESTHÉTIQUE DE L'ŒUVRE.
+ *
+ *   drole          On le met POUR RIRE. L'humour domine du début à la fin.
+ *   intense        Enjeux élevés, ça ne relâche pas.
+ *   facile         Se regarde fatigué : simple à suivre, aucune tension
+ *                  prolongée.
+ *   mindfuck       Demande de reconstruire. On en parle après.
+ *   emotion        Ça serre la gorge.
+ *   stressant      Angoisse, peur, malaise.
+ *   spectaculaire  Grand écran, images qui en mettent plein la vue.
+ *   intelligent    Des idées, un propos, ça laisse à penser.
+ *   chill          Apaisant. Rien ne vient nous secouer.
+ *   surprenant     Prend à contre-pied.
+ *
+ * Pièges avérés : Drive est lent et léché mais contient un écrasement de
+ * crâne — pas chill. Jurassic Park est grand public mais terrifiant — pas
+ * facile. La vie est belle se passe pour moitié dans un camp — pas drôle.
+ */
+import { readFileSync } from 'node:fs'
+
+const SEED = new URL('./catalogue.seed.json', import.meta.url)
+const works = JSON.parse(readFileSync(SEED, 'utf8'))
+
+export const MOOD_IDS = [
+  'drole', 'intense', 'facile', 'mindfuck', 'emotion',
+  'stressant', 'spectaculaire', 'intelligent', 'chill', 'surprenant',
+]
+
+const GENRE_IDS = [
+  'Action', 'Animation', 'Aventure', 'Comédie', 'Crime', 'Drame', 'Familial',
+  'Fantastique', 'Guerre', 'Histoire', 'Horreur', 'Musique', 'Mystère',
+  'Romance', 'Science-Fiction', 'Thriller', 'Western',
+]
 
 /** « On se pose » et « ça secoue » ne peuvent pas coexister. */
 const CALME = ['chill', 'facile']
@@ -23,20 +58,27 @@ const MAX_MOODS = 3
 
 const errors = []
 const known = new Set(MOOD_IDS)
-const seeds = new Set(MOVIES.map((m) => m.wiki))
-
-/* ------------------------------------------------------------ couverture */
-
-for (const { wiki } of MOVIES) {
-  if (!MOODS[wiki]) errors.push(`${wiki} : aucune humeur`)
-}
-for (const wiki of Object.keys(MOODS)) {
-  if (!seeds.has(wiki)) errors.push(`${wiki} : clé orpheline, absente du catalogue`)
-}
+const knownGenres = new Set(GENRE_IDS)
+const seenIds = new Set()
 
 /* --------------------------------------------------------- cohérence */
 
-for (const [wiki, moods] of Object.entries(MOODS)) {
+for (const w of works) {
+  const wiki = `${w.title} (${w.year})`
+  const moods = w.moods
+
+  // Un identifiant en double ferait fusionner deux œuvres dans la bibliothèque.
+  const idKey = `${w.type}:${w.tmdbId}`
+  if (seenIds.has(idKey)) errors.push(`${wiki} : identifiant TMDB en double`)
+  seenIds.add(idKey)
+
+  if (!Array.isArray(w.genres) || w.genres.length === 0) {
+    errors.push(`${wiki} : aucun genre`)
+  }
+  for (const g of w.genres ?? []) {
+    if (!knownGenres.has(g)) errors.push(`${wiki} : genre inconnu « ${g} »`)
+  }
+
   if (!Array.isArray(moods)) {
     errors.push(`${wiki} : les humeurs doivent être un tableau`)
     continue
@@ -71,10 +113,11 @@ if (errors.length) {
 }
 
 const counts = Object.fromEntries(MOOD_IDS.map((id) => [id, 0]))
-for (const moods of Object.values(MOODS)) for (const m of moods) counts[m]++
+for (const w of works) for (const m of w.moods) counts[m]++
 
+const films = works.filter((w) => w.type === 'movie').length
 const line = MOOD_IDS.map((id) => `${id} ${counts[id]}`).join(' · ')
-console.log(`✓ Humeurs : ${MOVIES.length} films, aucune contradiction.`)
+console.log(`✓ Catalogue : ${films} films et ${works.length - films} séries, aucune contradiction.`)
 console.log(`  ${line}`)
 
 // Un axe vide rendrait une demande impossible à satisfaire.

@@ -21,7 +21,6 @@ const ROOT = resolve(HERE, '..')
 const SEED = resolve(HERE, 'catalogue.seed.json')
 const CACHE = resolve(HERE, '.catalogue-cache.json')
 const OUT = resolve(ROOT, 'src/data/catalogue.json')
-const LEGACY = resolve(ROOT, 'src/data/movies.json')
 
 const IMG = 'https://image.tmdb.org/t/p'
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
@@ -43,12 +42,20 @@ async function loadKey() {
   return null
 }
 
+const OPTIONAL = process.argv.includes('--optional')
+
 const KEY = await loadKey()
 if (!/^[0-9a-f]{32}$/i.test(KEY ?? '')) {
-  console.error(
-    '✗ Clé TMDB v3 absente ou invalide.\n' +
-      "  Renseigne TMDB_API_KEY dans .env.local ou dans l'environnement.",
-  )
+  const message =
+    'Clé TMDB v3 absente ou invalide — renseigne TMDB_API_KEY dans .env.local ' +
+    "ou dans l'environnement."
+  // Le catalogue est versionné et complet : un build sans clé doit passer,
+  // sinon personne ne peut plus construire l'app sans secret.
+  if (OPTIONAL && existsSync(OUT)) {
+    console.warn(`⚠ ${message}\n  Le catalogue déjà publié est conservé tel quel.`)
+    process.exit(0)
+  }
+  console.error(`✗ ${message}`)
   process.exit(1)
 }
 
@@ -149,16 +156,20 @@ writeFileSync(CACHE, JSON.stringify(cache))
  * Les identifiants existants sont sacrés.
  *
  * `seen`, `favorites` et les avis sont stockés PAR identifiant, en local et
- * chez Supabase. Reslugger les 100 films sur leur titre français ferait
- * silencieusement disparaître la progression de tout le monde. On récupère
- * donc l'identifiant historique via l'identifiant TMDB.
+ * chez Supabase. Reslugger une œuvre ferait silencieusement disparaître la
+ * progression de tout le monde : pas d'erreur, pas de message, juste une barre
+ * revenue à zéro. On relit donc le catalogue déjà publié et on récupère
+ * l'identifiant en place via l'identifiant TMDB.
+ *
+ * C'est le fichier de sortie lui-même qui sert de mémoire — il est versionné,
+ * donc cette mémoire ne peut pas se perdre.
  */
-const legacy = existsSync(LEGACY) ? JSON.parse(readFileSync(LEGACY, 'utf8')).items : []
-const legacyById = new Map(legacy.filter((m) => m.tmdbId).map((m) => [m.tmdbId, m.id]))
+const legacy = existsSync(OUT) ? JSON.parse(readFileSync(OUT, 'utf8')).items : []
+const legacyById = new Map(legacy.filter((m) => m.tmdbId).map((m) => [`${m.kind}:${m.tmdbId}`, m.id]))
 
 const used = new Set()
 function idFor(entry, detail) {
-  const kept = entry.type === 'movie' ? legacyById.get(entry.tmdbId) : null
+  const kept = legacyById.get(`${entry.type === 'tv' ? 'series' : 'movie'}:${entry.tmdbId}`)
   let id = kept ?? slug(detail.title || entry.title)
   if (!id) id = `${entry.type}-${entry.tmdbId}`
   // Deux œuvres peuvent porter le même titre : on suffixe par l'année.
@@ -261,6 +272,24 @@ if (ids.size !== items.length) {
   console.error(`\n✗ ${items.length - ids.size} identifiant(s) en double — refus d'écrire un catalogue ambigu.`)
   process.exit(1)
 }
-const preserved = films.filter((i) => legacyById.get(i.tmdbId) === i.id).length
 console.log(`\n  identifiants uniques : ${ids.size} ✓`)
-console.log(`  identifiants historiques préservés : ${preserved} / ${legacy.length}`)
+
+/**
+ * Le contrôle qui compte vraiment.
+ *
+ * Un identifiant qui change, c'est une progression effacée sans un mot :
+ * l'œuvre redevient « pas vue », les avis se détachent, la barre recule. Le
+ * script refuse donc d'écrire plutôt que de laisser passer ça.
+ */
+const changed = []
+for (const i of items) {
+  const before = legacyById.get(`${i.kind}:${i.tmdbId}`)
+  if (before && before !== i.id) changed.push(`${i.title} : ${before} → ${i.id}`)
+}
+if (changed.length) {
+  console.error(`\n✗ ${changed.length} identifiant(s) déjà publié(s) ont changé :`)
+  changed.slice(0, 10).forEach((c) => console.error('     · ' + c))
+  console.error('  Ce serait une perte silencieuse de progression. Rien n’a été écrit.')
+  process.exit(1)
+}
+console.log(`  identifiants déjà publiés, conservés : ${legacy.length} ✓`)

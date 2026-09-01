@@ -4,7 +4,7 @@ import { Reel } from './Reel'
 import { Poster } from './Poster'
 import { Chip } from './Chip'
 import { IconCheck, IconHeart, IconRefresh, IconSliders, IconStar } from './icons'
-import { WORKS, WORKS_BY_ID, formatRuntime, type Work } from '../movies/catalog'
+import { WORKS, WORKS_BY_ID, formatEngagement, type Kind, type Work } from '../movies/catalog'
 import { applyFilters, countActive, type Filters } from '../movies/filters'
 import { pickNext, pickWeighted, shuffle } from '../core/picker'
 import { library } from '../core/library'
@@ -27,6 +27,8 @@ interface Props {
   filters: Filters
   onOpenFilters: () => void
   onToggleUnseen: () => void
+  /** Bascule film / série — en solo seulement, le duo la fixe à l'ouverture. */
+  onSetKind?: (kind: Kind) => void
   seen: Set<string>
   favorites: Set<string>
   history: string[]
@@ -79,6 +81,7 @@ export function RouletteScreen({
   filters,
   onOpenFilters,
   onToggleUnseen,
+  onSetKind,
   seen,
   favorites,
   history,
@@ -232,7 +235,7 @@ export function RouletteScreen({
           ) : empty ? (
             <EmptyState key="empty" duo={duo} onOpenFilters={onOpenFilters} />
           ) : (
-            <IdleState key="idle" count={pool.length} duo={duo} />
+            <IdleState key="idle" count={pool.length} duo={duo} kind={filters.kind} />
           )}
         </AnimatePresence>
       </div>
@@ -241,6 +244,25 @@ export function RouletteScreen({
         <div className="relative shrink-0 pb-4">
           {/* Les filtres solo n'ont pas de sens en duo : les envies ont déjà
               été exprimées par chacun, et une contrainte ne se modifie pas ici. */}
+          {!duo && onSetKind && (
+            <div className="mb-3 flex gap-2">
+              {(['movie', 'series'] as const).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() => onSetKind(k)}
+                  aria-pressed={filters.kind === k}
+                  className={`flex-1 rounded-2xl border py-2.5 text-[13.5px] font-semibold transition-colors ${
+                    filters.kind === k
+                      ? 'border-gold bg-gold/15 text-gold'
+                      : 'border-line bg-surface text-cream/70'
+                  }`}
+                >
+                  {k === 'movie' ? '🎬 Un film' : '📺 Une série'}
+                </button>
+              ))}
+            </div>
+          )}
           {!duo && (
             <div className="mb-3 flex items-center gap-2 overflow-x-auto no-scrollbar">
               <Chip active={filters.unseenOnly} onClick={onToggleUnseen}>
@@ -289,7 +311,8 @@ export function RouletteScreen({
 
 /* ------------------------------------------------------------------ écrans */
 
-function IdleState({ count, duo }: { count: number; duo: boolean }) {
+function IdleState({ count, duo, kind }: { count: number; duo: boolean; kind: Kind }) {
+  const mot = kind === 'series' ? 'séries' : 'films'
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -300,8 +323,8 @@ function IdleState({ count, duo }: { count: number; duo: boolean }) {
       <FannedPosters />
       <p className="mt-8 max-w-[17rem] text-[15px] leading-relaxed text-muted text-balance">
         {duo
-          ? `${count} films correspondent à vos envies communes ce soir.`
-          : `${count} films triés sur le volet. Appuie, et la soirée est décidée.`}
+          ? `${count} ${mot} correspondent à vos envies communes ce soir.`
+          : `${count} ${mot} en réserve. Appuie, et la soirée est décidée.`}
       </p>
     </motion.div>
   )
@@ -415,7 +438,7 @@ function ResultCard({
       <div className="mt-2 flex flex-wrap items-center justify-center gap-x-2.5 gap-y-1 text-[13px] text-muted">
         <span>{movie.year}</span>
         <span className="opacity-40">·</span>
-        <span>{formatRuntime(movie.runtime)}</span>
+        <span>{formatEngagement(movie)}</span>
         <span className="opacity-40">·</span>
         <span>{movie.genres.join(', ')}</span>
         {movie.rating != null && (
@@ -521,7 +544,7 @@ function TonightPanel({
         {movie.title}
       </h2>
       <p className="mt-2 text-[13px] text-muted">
-        {movie.year} · {formatRuntime(movie.runtime)}
+        {movie.year} · {formatEngagement(movie)}
       </p>
       <p className="mt-5 text-[14px] text-gold">Bonne séance 🍿</p>
 

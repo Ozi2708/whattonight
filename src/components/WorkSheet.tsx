@@ -1,7 +1,7 @@
 import { Sheet } from './Sheet'
 import { Poster } from './Poster'
 import { IconCheck, IconHeart, IconStar } from './icons'
-import { formatRuntime, type Work } from '../movies/catalog'
+import { formatEngagement, type Work } from '../movies/catalog'
 import type { Verdict } from '../core/types'
 
 interface Props {
@@ -69,7 +69,9 @@ export function WorkSheet({
                   <p className="mt-1 text-[13px] text-muted">{movie.originalTitle}</p>
                 )}
                 <p className="mt-2.5 text-[13px] text-muted">
-                  {movie.year} · {formatRuntime(movie.runtime)}
+                  {movie.year} · {formatEngagement(movie)}
+                  {movie.kind === 'series' && movie.ended === false && ' · en cours'}
+                  {movie.kind === 'series' && movie.ended === true && ' · terminée'}
                 </p>
                 {movie.director && (
                   <p className="mt-1 text-[13px] text-muted">

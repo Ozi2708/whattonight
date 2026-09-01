@@ -1,9 +1,22 @@
-import raw from '../data/movies.json'
+import raw from '../data/catalogue.json'
 import type { RouletteItem } from '../core/types'
 
+/** Forme de la réponse à « on regarde quoi ce soir ? ». */
+export type Kind = 'movie' | 'series'
+
 export interface Work extends RouletteItem {
+  kind: Kind
+  /**
+   * Appartient à la collection à compléter — « Les 100 films à voir ».
+   *
+   * Le catalogue est bien plus large que le canon : le canon est une promesse
+   * éditoriale finie, le reste est un réservoir pour ne jamais tourner en
+   * rond. Seul le canon compte dans la progression.
+   */
+  canon: boolean
   originalTitle: string
   year: number
+  /** Durée du film ; pour une série, celle d'un épisode — souvent inconnue. */
   runtime: number | null
   genres: string[]
   moods: string[]
@@ -13,6 +26,10 @@ export interface Work extends RouletteItem {
   poster: string | null
   posterSmall: string | null
   backdrop: string | null
+  /** Séries uniquement. */
+  seasons: number | null
+  episodes: number | null
+  ended: boolean | null
 }
 
 interface Catalog {
@@ -27,6 +44,11 @@ const data = raw as unknown as Catalog
 export const WORKS: Work[] = data.items.map((m) => ({ ...m, image: m.poster }))
 
 export const WORKS_BY_ID = new Map(WORKS.map((m) => [m.id, m]))
+
+/** La collection finie, celle qui porte la barre de progression. */
+export const CANON = WORKS.filter((w) => w.canon)
+
+export const worksOfKind = (kind: Kind) => WORKS.filter((w) => w.kind === kind)
 
 /** Genres réellement présents dans le catalogue, triés pour l'affichage. */
 export const GENRES: string[] = [...new Set(WORKS.flatMap((m) => m.genres))].sort((a, b) =>
@@ -92,6 +114,23 @@ export function formatRuntime(minutes: number | null): string {
   const h = Math.floor(minutes / 60)
   const m = minutes % 60
   return h ? `${h}h${m ? String(m).padStart(2, '0') : ''}` : `${m} min`
+}
+
+/**
+ * Ce qu'on affiche à la place de la durée pour une série.
+ *
+ * TMDB ne connaît la durée d'un épisode que pour une série sur six : mieux
+ * vaut annoncer ce qu'on sait — saisons et épisodes — que d'inventer une
+ * durée. Et c'est de toute façon l'information utile : ce qui compte pour
+ * une série, c'est l'engagement.
+ */
+export function formatEngagement(work: Work): string {
+  if (work.kind !== 'series') return formatRuntime(work.runtime)
+  const parts: string[] = []
+  if (work.seasons) parts.push(plural(work.seasons, 'saison'))
+  if (work.episodes) parts.push(plural(work.episodes, 'épisode'))
+  if (!parts.length) return 'Série'
+  return parts.join(' · ')
 }
 
 export function decadeOf(year: number): string {

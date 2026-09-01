@@ -2,12 +2,21 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Poster } from './Poster'
 import { SeenStamp } from './SeenStamp'
 import { IconHeart } from './icons'
-import { WORKS, type Work } from '../movies/catalog'
+import { CANON, WORKS, formatEngagement, plural, type Work } from '../movies/catalog'
 
-type View = 'all' | 'todo' | 'seen' | 'favorites'
+/** Ce qu'on regarde : la collection, le réservoir, ou les séries. */
+type Scope = 'canon' | 'films' | 'series'
+/** Où on en est : indépendant de ce qu'on regarde. */
+type State = 'all' | 'todo' | 'seen' | 'favorites'
 
-const VIEWS: { id: View; label: string }[] = [
-  { id: 'all', label: 'Tous' },
+const SCOPES: { id: Scope; label: string }[] = [
+  { id: 'canon', label: `Les ${CANON.length}` },
+  { id: 'films', label: 'Tous les films' },
+  { id: 'series', label: 'Séries' },
+]
+
+const STATES: { id: State; label: string }[] = [
+  { id: 'all', label: 'Tout' },
   { id: 'todo', label: 'À voir' },
   { id: 'seen', label: 'Déjà vus' },
   { id: 'favorites', label: 'Favoris' },
@@ -30,9 +39,10 @@ function milestone(count: number, total: number): string {
 }
 
 export function CatalogScreen({ seen, favorites, onOpen }: Props) {
-  const [view, setView] = useState<View>('all')
+  const [scope, setScope] = useState<Scope>('canon')
+  const [state, setState] = useState<State>('all')
 
-  // On n'anime le tampon que sur les films qui VIENNENT d'être marqués.
+  // On n'anime le tampon que sur les œuvres qui VIENNENT d'être marquées.
   // Animer toute la grille à chaque rendu donnerait un écran nerveux et
   // ferait perdre l'information : c'est le changement qui doit sauter aux yeux.
   const known = useRef<Set<string> | null>(null)
@@ -45,33 +55,41 @@ export function CatalogScreen({ seen, favorites, onOpen }: Props) {
     if (added.length) setFreshlySeen(new Set(added))
   }, [seen])
 
-  const movies = useMemo(() => {
-    switch (view) {
-      case 'todo':
-        return WORKS.filter((m) => !seen.has(m.id))
-      case 'seen':
-        return WORKS.filter((m) => seen.has(m.id))
-      case 'favorites':
-        return WORKS.filter((m) => favorites.has(m.id))
-      default:
-        return WORKS
-    }
-  }, [view, seen, favorites])
+  const works = useMemo(() => {
+    const base =
+      scope === 'canon'
+        ? CANON
+        : scope === 'series'
+          ? WORKS.filter((w) => w.kind === 'series')
+          : WORKS.filter((w) => w.kind === 'movie')
 
-  const progress = Math.round((seen.size / WORKS.length) * 100)
+    switch (state) {
+      case 'todo':
+        return base.filter((w) => !seen.has(w.id))
+      case 'seen':
+        return base.filter((w) => seen.has(w.id))
+      case 'favorites':
+        return base.filter((w) => favorites.has(w.id))
+      default:
+        return base
+    }
+  }, [scope, state, seen, favorites])
+
+  // La progression porte TOUJOURS sur le canon, quel que soit l'onglet ouvert.
+  // C'est lui la collection : le réservoir n'est pas une liste à compléter.
+  const canonSeen = CANON.filter((w) => seen.has(w.id)).length
+  const progress = Math.round((canonSeen / CANON.length) * 100)
 
   return (
     <div className="px-5 pt-[max(1.5rem,env(safe-area-inset-top))] pb-6">
       <header>
-        <h1 className="text-[26px] leading-tight font-semibold tracking-tight">
-          Les {WORKS.length} films à voir
-        </h1>
+        <h1 className="text-[26px] leading-tight font-semibold tracking-tight">Collection</h1>
 
         <div className="mt-5">
           <div className="flex items-baseline justify-between">
             <p className="text-[15px] font-medium">
-              <span className="text-gold">{seen.size}</span>
-              <span className="text-muted"> / {WORKS.length} films vus</span>
+              <span className="text-gold">{canonSeen}</span>
+              <span className="text-muted"> / {CANON.length} films à voir</span>
             </p>
             <p className="text-[13px] font-semibold text-muted">{progress} %</p>
           </div>
@@ -81,47 +99,52 @@ export function CatalogScreen({ seen, favorites, onOpen }: Props) {
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="mt-2 text-[12.5px] text-muted">{milestone(seen.size, WORKS.length)}</p>
+          <p className="mt-2 text-[12.5px] text-muted">{milestone(canonSeen, CANON.length)}</p>
         </div>
       </header>
 
+      {/* Deux rangées, deux questions distinctes : « quoi » puis « où j'en
+          suis ». Les mélanger sur une seule ligne obligeait à relire la
+          rangée entière pour comprendre ce qui était filtré. */}
       <div className="mt-5 -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 no-scrollbar">
-        {VIEWS.map((v) => (
-          <button
-            key={v.id}
-            type="button"
-            onClick={() => setView(v.id)}
-            aria-pressed={view === v.id}
-            className={`rounded-full border px-4 py-2 text-[13px] font-medium whitespace-nowrap transition-colors ${
-              view === v.id
-                ? 'border-cream bg-cream text-ink'
-                : 'border-line bg-surface text-cream/75'
-            }`}
-          >
-            {v.label}
-          </button>
+        {SCOPES.map((s) => (
+          <Chip key={s.id} on={scope === s.id} onClick={() => setScope(s.id)} accent>
+            {s.label}
+          </Chip>
+        ))}
+      </div>
+      <div className="mt-2 -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 no-scrollbar">
+        {STATES.map((s) => (
+          <Chip key={s.id} on={state === s.id} onClick={() => setState(s.id)}>
+            {s.label}
+          </Chip>
         ))}
       </div>
 
-      {movies.length === 0 ? (
+      <p className="mt-3 text-[12.5px] text-muted">
+        {plural(works.length, scope === 'series' ? 'série' : 'film')}
+        {scope === 'films' && ' · les ★ font partie des 100'}
+      </p>
+
+      {works.length === 0 ? (
         <p className="py-20 text-center text-[14px] text-muted">
-          {view === 'favorites' ? 'Aucun favori pour l’instant.' : 'Rien ici pour l’instant.'}
+          {state === 'favorites' ? 'Aucun favori pour l’instant.' : 'Rien ici pour l’instant.'}
         </p>
       ) : (
-        <ul className="mt-5 grid grid-cols-3 gap-2.5">
-          {movies.map((m) => {
-            const isSeen = seen.has(m.id)
+        <ul className="mt-3 grid grid-cols-3 gap-2.5">
+          {works.map((w) => {
+            const isSeen = seen.has(w.id)
             return (
-              <li key={m.id}>
+              <li key={w.id}>
                 <button
                   type="button"
-                  onClick={() => onOpen(m)}
+                  onClick={() => onOpen(w)}
                   className="group block w-full text-left"
                 >
                   <span className="relative block overflow-hidden rounded-xl border border-white/10">
                     <Poster
-                      src={m.posterSmall ?? m.image}
-                      alt={m.title}
+                      src={w.posterSmall ?? w.image}
+                      alt={w.title}
                       className={`w-full transition-[filter] duration-500 ${
                         // Assombri et désaturé : l'affiche reste reconnaissable,
                         // mais recule visuellement derrière le tampon.
@@ -130,9 +153,18 @@ export function CatalogScreen({ seen, favorites, onOpen }: Props) {
                       style={{ aspectRatio: '2 / 3' }}
                     />
 
-                    {isSeen && <SeenStamp animate={freshlySeen.has(m.id)} />}
+                    {isSeen && <SeenStamp animate={freshlySeen.has(w.id)} />}
 
-                    {favorites.has(m.id) && (
+                    {/* Le point doré ne s'affiche que hors de la vue « Les 100 » :
+                        à l'intérieur, tout en fait partie, il ne dirait rien. */}
+                    {scope === 'films' && w.canon && (
+                      <span
+                        className="absolute top-1.5 left-1.5 h-2.5 w-2.5 rounded-full bg-gold shadow-[0_0_0_2px_rgba(0,0,0,0.5)]"
+                        aria-label="Fait partie des 100"
+                      />
+                    )}
+
+                    {favorites.has(w.id) && (
                       <span
                         className="absolute top-1.5 right-1.5 grid h-6 w-6 place-items-center rounded-full bg-black/65 text-gold backdrop-blur"
                         aria-label="Favori"
@@ -147,9 +179,11 @@ export function CatalogScreen({ seen, favorites, onOpen }: Props) {
                       isSeen ? 'text-cream/45' : 'text-cream/80'
                     }`}
                   >
-                    {m.title}
+                    {w.title}
                   </p>
-                  <p className="text-[11px] text-muted">{m.year}</p>
+                  <p className="truncate text-[11px] text-muted">
+                    {w.kind === 'series' ? formatEngagement(w) : w.year}
+                  </p>
                 </button>
               </li>
             )
@@ -157,5 +191,34 @@ export function CatalogScreen({ seen, favorites, onOpen }: Props) {
         </ul>
       )}
     </div>
+  )
+}
+
+function Chip({
+  on,
+  accent = false,
+  onClick,
+  children,
+}: {
+  on: boolean
+  accent?: boolean
+  onClick: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={on}
+      className={`rounded-full border px-4 py-2 text-[13px] font-medium whitespace-nowrap transition-colors ${
+        on
+          ? accent
+            ? 'border-gold bg-gold text-ink'
+            : 'border-cream bg-cream text-ink'
+          : 'border-line bg-surface text-cream/75'
+      }`}
+    >
+      {children}
+    </button>
   )
 }

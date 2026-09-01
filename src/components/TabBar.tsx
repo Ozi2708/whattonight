@@ -6,7 +6,7 @@ export type Tab = 'duo' | 'roulette' | 'catalog' | 'profile'
 const TABS: { id: Tab; label: string; Icon: (p: { className?: string }) => React.ReactElement }[] = [
   { id: 'duo', label: 'Duo', Icon: IconVenn },
   { id: 'roulette', label: 'Solo', Icon: IconSlot },
-  { id: 'catalog', label: 'Les 100', Icon: IconGrid },
+  { id: 'catalog', label: 'Collection', Icon: IconGrid },
   { id: 'profile', label: 'Profil', Icon: IconUser },
 ]
 

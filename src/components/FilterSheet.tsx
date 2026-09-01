@@ -36,7 +36,7 @@ export function FilterSheet({ open, onClose, filters, onChange, matches }: Props
           <h2 className="text-xl font-semibold tracking-tight">Filtres</h2>
           <button
             type="button"
-            onClick={() => onChange(NO_FILTERS)}
+            onClick={() => onChange({ ...NO_FILTERS, kind: filters.kind })}
             className="text-[13px] text-muted underline-offset-4 hover:text-cream hover:underline"
           >
             Tout effacer
@@ -95,7 +95,7 @@ export function FilterSheet({ open, onClose, filters, onChange, matches }: Props
         >
           {matches === 0
             ? 'Aucun film ne correspond'
-            : `Voir ${matches} film${matches > 1 ? 's' : ''}`}
+            : `Voir ${matches} ${filters.kind === 'series' ? 'série' : 'film'}${matches > 1 ? 's' : ''}`}
         </button>
       </div>
     </Sheet>

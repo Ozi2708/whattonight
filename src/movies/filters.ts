@@ -1,6 +1,8 @@
-import { decadeOf, type Work } from './catalog'
+import { decadeOf, type Kind, type Work } from './catalog'
 
 export interface Filters {
+  /** Film ou série : deux tirages distincts, jamais mélangés. */
+  kind: Kind
   unseenOnly: boolean
   genres: string[]
   /** Durée maximale en minutes ; `null` = peu importe. */
@@ -9,7 +11,13 @@ export interface Filters {
   decades: string[]
 }
 
-export const NO_FILTERS: Filters = { unseenOnly: false, genres: [], maxRuntime: null, decades: [] }
+export const NO_FILTERS: Filters = {
+  kind: 'movie',
+  unseenOnly: false,
+  genres: [],
+  maxRuntime: null,
+  decades: [],
+}
 
 export const RUNTIME_OPTIONS = [
   { label: 'Peu importe', value: null },
@@ -27,10 +35,17 @@ export const DECADE_OPTIONS = [
 
 export function applyFilters(movies: Work[], filters: Filters, seen: Set<string>): Work[] {
   return movies.filter((m) => {
+    if (m.kind !== filters.kind) return false
     if (filters.unseenOnly && seen.has(m.id)) return false
     if (filters.genres.length && !m.genres.some((g) => filters.genres.includes(g))) return false
-    // Une durée inconnue ne doit pas passer un filtre de durée en douce.
-    if (filters.maxRuntime != null && (m.runtime == null || m.runtime > filters.maxRuntime)) return false
+    // La durée ne veut rien dire pour une série : « moins de 2h » désigne la
+    // longueur d'une soirée de film, pas un épisode. On ne l'applique donc
+    // qu'aux films, plutôt que d'exclure toutes les séries dès qu'une limite
+    // est posée.
+    if (m.kind === 'movie' && filters.maxRuntime != null) {
+      // Une durée inconnue ne doit pas passer un filtre de durée en douce.
+      if (m.runtime == null || m.runtime > filters.maxRuntime) return false
+    }
     if (filters.decades.length && !filters.decades.includes(decadeOf(m.year))) return false
     return true
   })

@@ -6,7 +6,7 @@ import { CompatibilityScreen } from './CompatibilityScreen'
 import { RouletteScreen } from './RouletteScreen'
 import { Poster } from './Poster'
 import { IconCheck } from './icons'
-import { WORKS, WORKS_BY_ID, plural, type Work } from '../movies/catalog'
+import { WORKS_BY_ID, plural, worksOfKind, type Work } from '../movies/catalog'
 import { explain, match, matchLabel, type MatchResult, type Participant, type Relaxation, type ScoredMovie, type Wishes } from '../movies/matching'
 import { buildDuoTaste, buildProfile, EMPTY_SIGNALS, type Affinity, type DuoTaste, type Signals, type TasteProfile } from '../movies/taste'
 import { QuickContext } from './QuickContext'
@@ -35,6 +35,7 @@ import {
   submitWishes,
   useLiveSession,
   type Duo,
+  type SessionKind,
   type SessionMode,
   type SpinPayload,
   type UserLibrary,
@@ -602,19 +603,21 @@ function DuoSession({
     if (!participants || participants.some((p) => !p.wishes)) return null
     // L'identifiant de session sert de graine : les deux téléphones calculent
     // le même pool, et il change à chaque nouvelle soirée.
-    return match(WORKS, participants, session?.id ?? '')
-  }, [participants, session?.id])
+    // Et le pool est restreint à ce que la soirée cherche : on ne propose pas
+    // une série à qui a ouvert une soirée film.
+    return match(worksOfKind(session?.kind ?? 'movie'), participants, session?.id ?? '')
+  }, [participants, session?.id, session?.kind])
 
   const names = useMemo(
     () => Object.fromEntries(duo.members.map((m) => [m.userId, m.displayName])),
     [duo.members],
   )
 
-  const start = async (mode: SessionMode) => {
+  const start = async (mode: SessionMode, kind: SessionKind) => {
     setBusy(true)
     setError(null)
     try {
-      await createSession(duo.id, profile.id, mode)
+      await createSession(duo.id, profile.id, mode, kind)
       setPhase('compat')
       setWishes(null)
       setResult(null)
@@ -800,8 +803,8 @@ function DuoSession({
       poolWeights={new Map(matchResult.pool.map((sc) => [sc.movie.id, sc.score]))}
       wildcards={new Set(matchResult.pool.filter((sc) => sc.wildcard).map((sc) => sc.movie.id))}
       eyebrow={duo.members.map((m) => m.displayName).join(' × ')}
-      heading="Votre film de ce soir"
-      ctaLabel="🎰 Trouver notre film"
+      heading={session.kind === 'series' ? 'Votre série de ce soir' : 'Votre film de ce soir'}
+      ctaLabel={session.kind === 'series' ? '🎰 Trouver notre série' : '🎰 Trouver notre film'}
       onRefuse={(m) => {
         onRefuse(m.id)
         recordSignal(profile.id, 'refused', { movieId: m.id })
@@ -894,7 +897,7 @@ function DuoHome({
   duo: Duo
   meId: string
   lastMovieId: string | null
-  onStart: (mode: SessionMode) => void
+  onStart: (mode: SessionMode, kind: SessionKind) => void
   busy: boolean
   error: string | null
   duoTaste: DuoTaste | null
@@ -908,6 +911,9 @@ function DuoHome({
 }) {
   const last = lastMovieId ? WORKS_BY_ID.get(lastMovieId) : undefined
   const ordered = [...duo.members].sort((a) => (a.userId === meId ? -1 : 1))
+  // Ce qu'on regarde vient AVANT comment on choisit : c'est la question la
+  // plus structurante, et elle change complètement le pool.
+  const [kind, setKind] = useState<SessionKind>('movie')
 
   return (
     <div className="ambient flex flex-1 flex-col justify-center px-6 py-10 text-center">
@@ -940,10 +946,26 @@ function DuoHome({
 
       {/* Deux portes vers le même moteur : elles ne diffèrent que par la
           quantité d'informations qu'on accepte de donner. */}
-      <div className="mx-auto mt-8 w-full max-w-sm space-y-3">
+      <div className="mx-auto mt-8 flex w-full max-w-sm gap-2">
+        {(['movie', 'series'] as const).map((k) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => setKind(k)}
+            aria-pressed={kind === k}
+            className={`flex-1 rounded-2xl border py-2.5 text-[13.5px] font-semibold transition-colors ${
+              kind === k ? 'border-gold bg-gold/15 text-gold' : 'border-line bg-surface/70 text-cream/70'
+            }`}
+          >
+            {k === 'movie' ? '🎬 Un film' : '📺 Une série'}
+          </button>
+        ))}
+      </div>
+
+      <div className="mx-auto mt-3 w-full max-w-sm space-y-3">
         <button
           type="button"
-          onClick={() => onStart('quick')}
+          onClick={() => onStart('quick', kind)}
           disabled={busy}
           className="w-full rounded-[22px] bg-gold px-5 py-[17px] text-left text-ink shadow-[0_10px_40px_-10px_var(--color-gold)] transition-transform active:scale-[0.98] disabled:opacity-50"
         >
@@ -955,7 +977,7 @@ function DuoHome({
 
         <button
           type="button"
-          onClick={() => onStart('precise')}
+          onClick={() => onStart('precise', kind)}
           disabled={busy}
           className="w-full rounded-[22px] border border-line bg-surface/70 px-5 py-[17px] text-left transition-transform active:scale-[0.98] disabled:opacity-50"
         >

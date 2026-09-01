@@ -119,3 +119,12 @@ Tant qu’il n’est pas appliqué :
 - « Choisis pour nous » affiche un message qui renvoie ici, plutôt que de
   servir silencieusement autre chose ;
 - les avis et le profil du duo restent locaux à l’appareil.
+
+## Migration V4
+
+Une seule colonne : ce qu'on regarde ce soir, un film ou une série.
+Colle **`supabase/schema.v4.sql`** dans le SQL Editor, puis Run.
+
+Tant qu'elle n'est pas appliquée, les soirées film fonctionnent normalement et
+une soirée série affiche un message qui renvoie ici — plutôt que de servir
+silencieusement un film à la place.
