@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/check-moods.mjs && node scripts/fetch-catalogue.mjs --optional && tsc -b && vite build",
+    "build": "node scripts/check-moods.mjs && node scripts/fetch-catalogue.mjs --optional && node scripts/fetch-providers.mjs --optional && tsc -b && vite build",
     "preview": "vite preview",
     "icons": "node scripts/make-icons.mjs",
     "moods:check": "node scripts/check-moods.mjs",
-    "catalogue:fetch": "node scripts/fetch-catalogue.mjs"
+    "catalogue:fetch": "node scripts/fetch-catalogue.mjs",
+    "providers:fetch": "node scripts/fetch-providers.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.4",

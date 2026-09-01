@@ -1,6 +1,7 @@
 import { motion } from 'motion/react'
 import { VennMark } from './VennMark'
 import { formatRuntime, moodLabel, plural } from '../movies/catalog'
+import { serviceLabel } from '../movies/providers'
 import type { MatchResult, Relaxation } from '../movies/matching'
 
 interface Props {
@@ -16,6 +17,13 @@ interface Props {
   canStart?: boolean
   hostName?: string
   busy?: boolean
+  /** Union des abonnements du duo — vide si personne n'en a renseigné. */
+  services?: string[]
+  /** Nombre d'œuvres écartées faute d'abonnement. */
+  beyondServices?: number
+  onIgnoreServices?: () => void
+  /** « film » ou « série » — le mot doit coller à ce que la soirée cherche. */
+  noun?: string
 }
 
 /**
@@ -34,6 +42,10 @@ export function CompatibilityScreen({
   canStart = true,
   hostName,
   busy = false,
+  services = [],
+  beyondServices = 0,
+  onIgnoreServices,
+  noun = 'film',
 }: Props) {
   const count = result.pool.length
 
@@ -63,6 +75,7 @@ export function CompatibilityScreen({
     ...cg.genres.slice(0, 2),
     ...cg.moods.slice(0, 2).map(moodLabel),
     ...(cg.maxRuntime ? [`Moins de ${formatRuntime(cg.maxRuntime)}`] : []),
+    ...(services.length ? [services.length === 1 ? serviceLabel(services[0]) : `Vos ${services.length} services`] : []),
   ]
 
   return (
@@ -82,10 +95,10 @@ export function CompatibilityScreen({
         className="mt-7 text-[27px] leading-tight font-semibold tracking-tight text-balance"
       >
         {narrowed
-          ? `On a trouvé ${plural(count, 'film')} qui vous v${count > 1 ? 'ont' : 'a'} à tous les deux.`
+          ? `On a trouvé ${plural(count, noun)} qui vous v${count > 1 ? 'ont' : 'a'} à tous les deux.`
           : limited
-            ? `${plural(count, 'film')} respecte${s_} vos limites à tous les deux.`
-            : `Tout est ouvert : ${plural(count, 'film')} sur la table.`}
+            ? `${plural(count, noun)} respecte${s_} vos limites à tous les deux.`
+            : `Tout est ouvert : ${plural(count, noun)} sur la table.`}
       </motion.h1>
 
       {tags.length > 0 && (
@@ -119,13 +132,29 @@ export function CompatibilityScreen({
       >
         {/* On n'affiche que les étapes qui ont réellement retiré des films :
             « 100 → 100 → 100 » n'apprend rien et fait douter du calcul. */}
-        {funnel.total} films
+        {plural(funnel.total, noun)}
         {limited &&
           ` → ${funnel.constraints} respecte${funnel.constraints > 1 ? 'nt' : ''} vos limites`}
         {narrowed &&
           ` → ${funnel.preferences} vous ressemble${funnel.preferences > 1 ? 'nt' : ''}`}
         {!limited && !narrowed && ' — vous n’avez encore rien écarté'}
       </motion.p>
+
+      {/* L'élargissement se décide en voyant ce qu'il rapporte, pas à
+          l'aveugle avant de chercher. Même mécanique que les compromis
+          chiffrés : on montre le coût, on ne l'impose pas. */}
+      {services.length > 0 && beyondServices > 0 && onIgnoreServices && (
+        <motion.button
+          type="button"
+          onClick={onIgnoreServices}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-3 text-[12.5px] text-gold underline-offset-4 hover:underline"
+        >
+          Chercher au-delà de vos abonnements : +{plural(beyondServices, noun)}
+        </motion.button>
+      )}
 
       {canStart ? (
         <motion.button

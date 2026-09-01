@@ -480,6 +480,29 @@ export async function pushAdjustments(userId: string, adjustments: Record<string
   if (error) throw error
 }
 
+/**
+ * Abonnements d'une personne.
+ *
+ * Lisibles par les membres de son duo : c'est indispensable à l'union. On
+ * regarde sur UN écran, donc un film disponible chez l'un est regardable par
+ * les deux — c'est le seul endroit de Venn où le duo ne cherche pas une
+ * intersection.
+ */
+export async function pushServices(userId: string, services: string[]) {
+  const { error } = await client().from('profiles').update({ services }).eq('id', userId)
+  if (error) throw error
+}
+
+export async function fetchServices(userId: string): Promise<string[]> {
+  const { data, error } = await client()
+    .from('profiles')
+    .select('services')
+    .eq('id', userId)
+    .maybeSingle()
+  if (error) throw error
+  return (data?.services as string[] | null) ?? []
+}
+
 export async function fetchAdjustments(userId: string): Promise<Record<string, number>> {
   const { data, error } = await client()
     .from('profiles')

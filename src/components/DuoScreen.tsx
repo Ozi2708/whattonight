@@ -10,6 +10,7 @@ import { WORKS_BY_ID, plural, worksOfKind, type Work } from '../movies/catalog'
 import { explain, match, matchLabel, type MatchResult, type Participant, type Relaxation, type ScoredMovie, type Wishes } from '../movies/matching'
 import { buildDuoTaste, buildProfile, EMPTY_SIGNALS, type Affinity, type DuoTaste, type Signals, type TasteProfile } from '../movies/taste'
 import { QuickContext } from './QuickContext'
+import { coveredOnly } from '../movies/providers'
 import { FeedbackCard } from './FeedbackCard'
 import { DuoSignature } from './Signature'
 import type { Verdict } from '../core/types'
@@ -28,6 +29,7 @@ import {
   markSpinResult,
   duoHistory,
   fetchRatings,
+  fetchServices,
   pushRating,
   recordSignal,
   cancelSession,
@@ -47,6 +49,8 @@ interface Props {
   history: string[]
   /** Tout ce que Venn a appris de MOI — construit dans App à partir de la bibliothèque. */
   signals: Signals
+  /** Mes abonnements, pour l'union du duo. */
+  services: string[]
   onRate: (movieId: string, verdict: Verdict) => void
   onRefuse: (movieId: string) => void
   onOpenDetails: (m: Work) => void
@@ -189,6 +193,7 @@ function DuoFlow({
   favorites,
   history,
   signals,
+  services,
   onRate,
   onRefuse,
   onOpenDetails,
@@ -267,6 +272,7 @@ function DuoFlow({
       favorites={favorites}
       history={history}
       signals={signals}
+      services={services}
       onRate={onRate}
       onRefuse={onRefuse}
       onOpenDetails={onOpenDetails}
@@ -436,6 +442,7 @@ function DuoSession({
   favorites,
   history,
   signals,
+  services,
   onRate,
   onRefuse,
   onOpenDetails,
@@ -461,6 +468,18 @@ function DuoSession({
   // construire un profil par personne PUIS le profil du duo.
   const [tasteSignals, setTasteSignals] = useState<Record<string, Signals>>({})
   const [nights, setNights] = useState<{ sessionId: string; movieId: string }[]>([])
+  /**
+   * L'UNION des abonnements du duo, pas leur intersection.
+   *
+   * Seul endroit de Venn où l'on n'additionne pas des contraintes : on regarde
+   * sur un écran, donc un film disponible chez l'un est regardable par les
+   * deux. Mesuré sur le catalogue : l'intersection laisse 60 films, l'union en
+   * ouvre 329.
+   */
+  const [union, setUnion] = useState<string[]>([])
+  // Élargir au-delà des abonnements : décidé sur l'écran de compatibilité, en
+  // voyant ce que ça coûte, plutôt qu'à l'aveugle avant de chercher.
+  const [ignoreServices, setIgnoreServices] = useState(false)
   const [result, setResult] = useState<Work | null>(null)
   const [tonight, setTonight] = useState<Work | null>(null)
 
@@ -484,6 +503,7 @@ function DuoSession({
     setWishes(null)
     setResult(null)
     setTonight(null)
+    setIgnoreServices(false)
   }, [session?.id])
   const me = progress.find((p) => p.userId === profile.id)
   const ready = session?.status === 'ready' || session?.status === 'decided'
@@ -514,9 +534,17 @@ function DuoSession({
             sig[m.userId] = { ...EMPTY_SIGNALS, ...lib, ratings }
           }
         }
+        const abos: string[][] = await Promise.all(
+          duo.members.map((m) =>
+            m.userId === profile.id
+              ? Promise.resolve(services)
+              : fetchServices(m.userId).catch(() => [] as string[]),
+          ),
+        )
         const past = await duoHistory(duo.id).catch(() => [])
         if (!alive) return
         setPartnerLib(libs)
+        setUnion([...new Set(abos.flat())])
         // Un film retenu ensemble compte comme choisi par les deux.
         const chosenTogether = past.map((n) => n.movieId)
         for (const id of Object.keys(sig)) {
@@ -605,8 +633,17 @@ function DuoSession({
     // le même pool, et il change à chaque nouvelle soirée.
     // Et le pool est restreint à ce que la soirée cherche : on ne propose pas
     // une série à qui a ouvert une soirée film.
-    return match(worksOfKind(session?.kind ?? 'movie'), participants, session?.id ?? '')
-  }, [participants, session?.id, session?.kind])
+    const all = worksOfKind(session?.kind ?? 'movie')
+    const pool = ignoreServices ? all : coveredOnly(all, union)
+    return match(pool, participants, session?.id ?? '')
+  }, [participants, session?.id, session?.kind, union, ignoreServices])
+
+  /** Ce que l'élargissement rapporterait, chiffré avant de le proposer. */
+  const beyondServices = useMemo(() => {
+    if (ignoreServices || !union.length || !session) return 0
+    const all = worksOfKind(session.kind)
+    return all.length - coveredOnly(all, union).length
+  }, [union, ignoreServices, session])
 
   const names = useMemo(
     () => Object.fromEntries(duo.members.map((m) => [m.userId, m.displayName])),
@@ -782,6 +819,10 @@ function DuoSession({
         onRestart={restart}
         canStart={isHost}
         hostName={host?.displayName}
+        services={ignoreServices ? [] : union}
+        beyondServices={beyondServices}
+        onIgnoreServices={() => setIgnoreServices(true)}
+        noun={session.kind === 'series' ? 'série' : 'film'}
       />
     )
   }
@@ -810,6 +851,7 @@ function DuoSession({
         recordSignal(profile.id, 'refused', { movieId: m.id })
       }}
       onBack={() => setPhase('compat')}
+      services={ignoreServices ? [] : union}
       spectator={!isHost}
       hostName={host?.displayName}
       remoteSpin={remoteSpin}

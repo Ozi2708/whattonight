@@ -6,6 +6,8 @@ import { WORKS, WORKS_BY_ID, formatRuntime, type Work } from '../movies/catalog'
 import { CATEGORIES, MOVIES_CATEGORY } from '../core/categories'
 import { library } from '../core/library'
 import { TasteSection } from './TasteSection'
+import { ServicesCard } from './ServicesCard'
+import { isCovered } from '../movies/providers'
 import type { TasteProfile } from '../movies/taste'
 
 interface Props {
@@ -13,6 +15,8 @@ interface Props {
   favorites: Set<string>
   lastPicked: string | null
   taste: TasteProfile
+  services: string[]
+  onSetServices: (services: string[]) => void
   onOpen: (m: Work) => void
   onDiscover: () => void
   onAdjust: (key: string, value: number) => void
@@ -24,6 +28,8 @@ export function ProfileScreen({
   favorites,
   lastPicked,
   taste,
+  services,
+  onSetServices,
   onOpen,
   onDiscover,
   onAdjust,
@@ -45,6 +51,13 @@ export function ProfileScreen({
         onDiscover={onDiscover}
         onAdjust={onAdjust}
         onResetAdjustments={onResetAdjustments}
+      />
+
+      <ServicesCard
+        services={services}
+        onChange={onSetServices}
+        covered={WORKS.filter((w) => isCovered(w.id, services)).length}
+        total={WORKS.length}
       />
 
       <InstallCard />

@@ -20,6 +20,27 @@ que la roulette ne tourne jamais en rond. Dans « Tous les films », les œuvres
 du canon portent un point doré, et elles reçoivent un léger bonus de
 classement — elles sont choisies et étiquetées à la main, le réservoir non.
 
+## Où regarder
+
+Chaque œuvre porte les services de streaming français où elle est incluse.
+Tes abonnements se règlent **une fois** dans Profil — c'est un fait stable sur
+toi, le demander chaque soir serait une taxe. Venn ne propose alors que ce que
+tu peux lancer tout de suite, et l'écran de compatibilité offre d'élargir en
+montrant ce que ça rapporte : *« Chercher au-delà de vos abonnements :
++285 films »*.
+
+**En duo, c'est une union, pas une intersection.** Seul endroit de Venn où l'on
+n'additionne pas des contraintes, et la raison est physique : vous regardez sur
+un seul écran, donc un film disponible chez l'un est regardable par les deux.
+Mesuré — l'un a Netflix + Disney+, l'autre Prime + Max : l'intersection laisse
+60 films, l'union en ouvre 329.
+
+Les données viennent de **JustWatch, via TMDB**. L'attribution est
+contractuelle : TMDB révoque les clés qui ne la respectent pas. Elle est
+affichée sur chaque fiche. Une tâche planifiée quotidienne
+(`.github/workflows/providers.yml`) rafraîchit `src/data/providers.json` et ne
+pousse un commit que si quelque chose a changé.
+
 ## Films et séries : deux tirages distincts
 
 Une soirée cherche un film **ou** une série, jamais les deux. L'hôte tranche à

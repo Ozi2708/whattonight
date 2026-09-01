@@ -1,9 +1,16 @@
 import { decadeOf, type Kind, type Work } from './catalog'
+import { isCovered } from './providers'
 
 export interface Filters {
   /** Film ou série : deux tirages distincts, jamais mélangés. */
   kind: Kind
   unseenOnly: boolean
+  /**
+   * Ne proposer que ce qu'on peut lancer tout de suite. Actif par défaut :
+   * une suggestion qu'on ne peut pas regarder n'est pas une suggestion.
+   * Sans abonnement renseigné, ce réglage n'a aucun effet.
+   */
+  servicesOnly: boolean
   genres: string[]
   /** Durée maximale en minutes ; `null` = peu importe. */
   maxRuntime: number | null
@@ -14,6 +21,7 @@ export interface Filters {
 export const NO_FILTERS: Filters = {
   kind: 'movie',
   unseenOnly: false,
+  servicesOnly: true,
   genres: [],
   maxRuntime: null,
   decades: [],
@@ -33,9 +41,15 @@ export const DECADE_OPTIONS = [
   { label: '2020s', value: '2020' },
 ] as const
 
-export function applyFilters(movies: Work[], filters: Filters, seen: Set<string>): Work[] {
+export function applyFilters(
+  movies: Work[],
+  filters: Filters,
+  seen: Set<string>,
+  services: string[] = [],
+): Work[] {
   return movies.filter((m) => {
     if (m.kind !== filters.kind) return false
+    if (filters.servicesOnly && !isCovered(m.id, services)) return false
     if (filters.unseenOnly && seen.has(m.id)) return false
     if (filters.genres.length && !m.genres.some((g) => filters.genres.includes(g))) return false
     // La durée ne veut rien dire pour une série : « moins de 2h » désigne la

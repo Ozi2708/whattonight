@@ -1,5 +1,5 @@
 import { library, readCategory, subscribeLibrary } from './library'
-import { fetchAdjustments, fetchLibrary, fetchRatings, pushAdjustments, pushLibrary, pushRatings } from './duo'
+import { fetchAdjustments, fetchLibrary, fetchRatings, fetchServices, pushAdjustments, pushLibrary, pushRatings, pushServices } from './duo'
 import { supabase } from './supabase'
 import { MOVIES_CATEGORY } from './categories'
 
@@ -37,11 +37,23 @@ export async function startLibrarySync(userId: string) {
     /* La table peut ne pas encore porter la colonne : sans conséquence. */
   }
 
+  try {
+    // Les abonnements distants ne priment que si rien n'est réglé localement :
+    // un choix qui vient d'être fait ici ne doit pas être écrasé.
+    const remote = await fetchServices(userId)
+    if (remote.length && !(readCategory(CATEGORY).services ?? []).length) {
+      library.setServices(CATEGORY, remote)
+    }
+  } catch {
+    /* Colonne absente : l'app fonctionne, sans partage des abonnements. */
+  }
+
   const flush = () => {
     const c = readCategory(CATEGORY)
     void pushLibrary(userId, c.seen, c.favorites).catch(() => {})
     void pushRatings(userId, c.ratings ?? {}).catch(() => {})
     void pushAdjustments(userId, c.adjustments ?? {}).catch(() => {})
+    void pushServices(userId, c.services ?? []).catch(() => {})
   }
 
   flush()

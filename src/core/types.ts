@@ -50,4 +50,9 @@ export interface CategoryState {
    * Clé = genre ou humeur, valeur = décalage dans [-1, 1].
    */
   adjustments?: Record<string, number>
+  /**
+   * Services auxquels la personne est abonnée. Vide = elle n'a rien dit, et
+   * Venn ne filtre alors rien du tout.
+   */
+  services?: string[]
 }

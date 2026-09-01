@@ -5,6 +5,7 @@ import { Poster } from './Poster'
 import { Chip } from './Chip'
 import { IconCheck, IconHeart, IconRefresh, IconSliders, IconStar } from './icons'
 import { WORKS, WORKS_BY_ID, formatEngagement, type Kind, type Work } from '../movies/catalog'
+import { isCovered, serviceLabel, servicesOf, whereToWatch } from '../movies/providers'
 import { applyFilters, countActive, type Filters } from '../movies/filters'
 import { pickNext, pickWeighted, shuffle } from '../core/picker'
 import { library } from '../core/library'
@@ -29,6 +30,9 @@ interface Props {
   onToggleUnseen: () => void
   /** Bascule film / série — en solo seulement, le duo la fixe à l'ouverture. */
   onSetKind?: (kind: Kind) => void
+  /** Abonnements de la personne, pour n'afficher que le regardable. */
+  services?: string[]
+  onToggleServices?: () => void
   seen: Set<string>
   favorites: Set<string>
   history: string[]
@@ -82,6 +86,8 @@ export function RouletteScreen({
   onOpenFilters,
   onToggleUnseen,
   onSetKind,
+  services = [],
+  onToggleServices,
   seen,
   favorites,
   history,
@@ -108,7 +114,7 @@ export function RouletteScreen({
   const [phase, setPhase] = useState<Phase>('idle')
   const [strip, setStrip] = useState<Work[]>([])
 
-  const soloPool = useMemo(() => applyFilters(WORKS, filters, seen), [filters, seen])
+  const soloPool = useMemo(() => applyFilters(WORKS, filters, seen, services), [filters, seen, services])
   const pool = externalPool ?? soloPool
   const duo = externalPool !== undefined
   const activeCount = countActive(filters)
@@ -221,6 +227,7 @@ export function RouletteScreen({
             <ResultCard
               key="result"
               movie={result}
+              services={services}
               seen={seen.has(result.id)}
               favorite={favorites.has(result.id)}
               reduced={reduced}
@@ -268,6 +275,15 @@ export function RouletteScreen({
               <Chip active={filters.unseenOnly} onClick={onToggleUnseen}>
                 Jamais vu
               </Chip>
+              {services.length > 0 && onToggleServices && (
+                <Chip active={filters.servicesOnly} onClick={onToggleServices}>
+                  {filters.servicesOnly
+                    ? services.length === 1
+                      ? serviceLabel(services[0])
+                      : `Mes ${services.length} services`
+                    : 'Tous les services'}
+                </Chip>
+              )}
               <Chip active={activeCount > (filters.unseenOnly ? 1 : 0)} onClick={onOpenFilters}>
                 <span className="flex items-center gap-1.5">
                   <IconSliders className="h-3.5! w-3.5!" />
@@ -403,6 +419,7 @@ interface ResultProps {
 function ResultCard({
   spectator,
   movie,
+  services,
   seen,
   favorite,
   reduced,
@@ -412,7 +429,7 @@ function ResultCard({
   onRespin,
   onSeen,
   onFavorite,
-}: ResultProps) {
+}: ResultProps & { services: string[] }) {
   return (
     <motion.div
       initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: 18 }}
@@ -448,6 +465,8 @@ function ResultCard({
           </span>
         )}
       </div>
+
+      <WhereBadge id={movie.id} services={services} />
 
       {reasons ?? (
         movie.overview && (
@@ -583,5 +602,33 @@ function AmbientGlow({ movie }: { movie: Work | null }) {
       />
       <div className="absolute inset-0 bg-linear-to-b from-ink/40 via-ink/60 to-ink" />
     </div>
+  )
+}
+
+/**
+ * Où regarder, sous le titre.
+ *
+ * On nomme le service, ou on dit franchement « en location » — annoncer un
+ * film comme disponible alors qu'il faut le payer serait exactement le genre
+ * d'approximation qui fait perdre confiance.
+ *
+ * L'attribution à JustWatch n'est pas une politesse : TMDB l'exige, sous peine
+ * de révocation de la clé. Elle est portée par la fiche détaillée.
+ */
+function WhereBadge({ id, services }: { id: string; services: string[] }) {
+  const where = whereToWatch(id, services)
+  if (!where) return null
+  const covered = isCovered(id, services) && servicesOf(id).length > 0
+
+  return (
+    <p
+      className={`mt-2.5 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-[12px] font-medium ${
+        covered
+          ? 'border-gold/40 bg-gold/10 text-gold'
+          : 'border-line bg-surface text-muted'
+      }`}
+    >
+      {covered ? '▸' : '€'} {where}
+    </p>
   )
 }

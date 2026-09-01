@@ -24,6 +24,7 @@ const emptyCategory = (): CategoryState => ({
   adjustments: {},
   chosen: [],
   refused: [],
+  services: [],
 })
 
 function load(): Library {
@@ -120,6 +121,10 @@ export const library = {
 
   clearAdjustments: (category: CategoryId) => update(category, (c) => ({ ...c, adjustments: {} })),
 
+  /** Abonnements de la personne : réglés une fois, modifiables à tout moment. */
+  setServices: (category: CategoryId, services: string[]) =>
+    update(category, (c) => ({ ...c, services: [...new Set(services)] })),
+
   toggleSeen: (category: CategoryId, id: string) =>
     update(category, (c) => ({ ...c, seen: toggleIn(c.seen, id) })),
 
@@ -191,6 +196,7 @@ export function useLibrary(category: CategoryId) {
     adjustments: c.adjustments ?? EMPTY_ADJUSTMENTS,
     chosen: c.chosen ?? EMPTY_LIST,
     refused: c.refused ?? EMPTY_LIST,
+    services: c.services ?? EMPTY_LIST,
     seenSet,
     favoriteSet,
   }

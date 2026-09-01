@@ -128,3 +128,11 @@ Colle **`supabase/schema.v4.sql`** dans le SQL Editor, puis Run.
 Tant qu'elle n'est pas appliquée, les soirées film fonctionnent normalement et
 une soirée série affiche un message qui renvoie ici — plutôt que de servir
 silencieusement un film à la place.
+
+## Migration V5
+
+Une colonne : les services de streaming auxquels chacun est abonné.
+Colle **`supabase/schema.v5.sql`** dans le SQL Editor, puis Run.
+
+Tant qu'elle n'est pas appliquée, tes propres abonnements fonctionnent
+normalement — c'est seulement l'union avec ceux de ton duo qui n'a pas lieu.

@@ -50,7 +50,7 @@ export default function App() {
   const [result, setResult] = useState<Work | null>(null)
   const [tonight, setTonight] = useState<Work | null>(null)
 
-  const { seenSet, favoriteSet, history, lastPicked, ratings, adjustments, chosen, refused } =
+  const { seenSet, favoriteSet, history, lastPicked, ratings, adjustments, chosen, refused, services } =
     useLibrary(CATEGORY)
 
   /**
@@ -96,6 +96,7 @@ export default function App() {
             favorites={favoriteSet}
             history={history}
             signals={signals}
+            services={services}
             onRate={(id, verdict) => library.rate(CATEGORY, id, verdict)}
             onRefuse={(id) => library.refuse(CATEGORY, id)}
             onOpenDetails={openDetails}
@@ -108,6 +109,8 @@ export default function App() {
             onOpenFilters={openFilters}
             onToggleUnseen={() => setFilters((f) => ({ ...f, unseenOnly: !f.unseenOnly }))}
             onSetKind={(kind) => setFilters((f) => ({ ...f, kind }))}
+            services={services}
+            onToggleServices={() => setFilters((f) => ({ ...f, servicesOnly: !f.servicesOnly }))}
             seen={seenSet}
             favorites={favoriteSet}
             history={history}
@@ -129,6 +132,8 @@ export default function App() {
             favorites={favoriteSet}
             lastPicked={lastPicked}
             taste={taste}
+            services={services}
+            onSetServices={(next) => library.setServices(CATEGORY, next)}
             onOpen={openDetails}
             onDiscover={() => push({ ...state, sheet: 'quicktaste' })}
             onAdjust={(key, value) => library.adjust(CATEGORY, key, value)}
@@ -144,7 +149,7 @@ export default function App() {
         onClose={back}
         filters={filters}
         onChange={setFilters}
-        matches={applyFilters(WORKS, filters, seenSet).length}
+        matches={applyFilters(WORKS, filters, seenSet, services).length}
       />
 
       {state.sheet === 'quicktaste' && (

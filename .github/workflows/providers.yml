@@ -1,0 +1,51 @@
+# Rafraîchit chaque nuit les disponibilités de streaming.
+#
+# Le catalogue ne bouge que quand on l'édite ; les disponibilités changent tous
+# les jours. JustWatch livre à TMDB une fois par 24 h — inutile d'interroger
+# plus souvent, personne ne change d'abonnement à midi.
+#
+# Un commit n'est poussé QUE si quelque chose a changé, et Vercel redéploie
+# alors tout seul. Si TMDB est indisponible, l'étape échoue sans rien casser :
+# les disponibilités déjà publiées restent en place.
+#
+# Prérequis, une seule fois : ajouter TMDB_API_KEY dans
+# Settings → Secrets and variables → Actions.
+
+name: Disponibilités de streaming
+
+on:
+  schedule:
+    # 04h12 UTC : après la livraison quotidienne de JustWatch à TMDB, et à une
+    # minute impaire pour éviter la congestion des tâches planifiées.
+    - cron: '12 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Récupérer les disponibilités (région FR)
+        env:
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+        run: node scripts/fetch-providers.mjs
+
+      - name: Pousser si quelque chose a changé
+        run: |
+          if git diff --quiet -- src/data/providers.json; then
+            echo "Aucun changement de disponibilité aujourd'hui."
+            exit 0
+          fi
+          git config user.name  "venn-bot"
+          git config user.email "venn-bot@users.noreply.github.com"
+          git add src/data/providers.json
+          git commit -m "Disponibilités de streaming — $(date -u +%d/%m/%Y)"
+          git push

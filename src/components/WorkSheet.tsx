@@ -2,6 +2,7 @@ import { Sheet } from './Sheet'
 import { Poster } from './Poster'
 import { IconCheck, IconHeart, IconStar } from './icons'
 import { formatEngagement, type Work } from '../movies/catalog'
+import { ATTRIBUTION, SERVICES, paidOnly, servicesOf } from '../movies/providers'
 import type { Verdict } from '../core/types'
 
 interface Props {
@@ -102,6 +103,8 @@ export function WorkSheet({
               <p className="mt-4 text-[14px] leading-relaxed text-cream/75">{movie.overview}</p>
             )}
 
+            <WhereToWatch id={movie.id} />
+
             {/* L'avis est proposé dès que le film est vu : c'est le moment où
                 la personne y pense, et un tap suffit. Rien n'oblige à répondre. */}
             {seen && (
@@ -154,6 +157,52 @@ export function WorkSheet({
         </div>
       )}
     </Sheet>
+  )
+}
+
+/**
+ * Où regarder, en détail.
+ *
+ * L'attribution à JustWatch n'est pas décorative : TMDB l'impose
+ * contractuellement, et le non-respect entraîne la révocation de la clé. Elle
+ * doit donc rester visible partout où ces données apparaissent.
+ */
+function WhereToWatch({ id }: { id: string }) {
+  const services = servicesOf(id)
+  const paid = paidOnly(id)
+  if (!services.length && !paid) return null
+
+  return (
+    <div className="mt-5 rounded-2xl border border-line bg-surface/50 p-4">
+      <p className="text-[11.5px] font-semibold tracking-wide text-muted uppercase">
+        Où le regarder
+      </p>
+      {services.length ? (
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          {services.map((s) => {
+            const meta = SERVICES.find((x) => x.id === s)
+            return (
+              <span
+                key={s}
+                className="flex items-center gap-2 rounded-full border border-line bg-ink/40 px-3 py-1.5 text-[12.5px] text-cream/85"
+              >
+                <span
+                  aria-hidden
+                  className="h-2.5 w-2.5 rounded-full"
+                  style={{ background: meta?.color ?? 'var(--color-muted)' }}
+                />
+                {meta?.label ?? s}
+              </span>
+            )
+          })}
+        </div>
+      ) : (
+        <p className="mt-2 text-[13px] text-muted">
+          Uniquement en location ou à l’achat.
+        </p>
+      )}
+      <p className="mt-3 text-[11px] text-muted/70">{ATTRIBUTION}</p>
+    </div>
   )
 }
 
