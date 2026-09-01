@@ -3,3 +3,6 @@ dist
 *.tsbuildinfo
 .env
 .env.local
+
+# Cache de récupération TMDB : reconstructible, inutile de le versionner.
+scripts/.catalogue-cache.json
