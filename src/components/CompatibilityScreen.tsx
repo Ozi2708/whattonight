@@ -22,6 +22,11 @@ interface Props {
   /** Nombre d'œuvres écartées faute d'abonnement. */
   beyondServices?: number
   onIgnoreServices?: () => void
+  /** La soirée pioche dans la collection des 100 — à dire, pas à deviner. */
+  canonOnly?: boolean
+  /** Nombre de films que quitter la collection rendrait accessibles. */
+  beyondCanon?: number
+  onIgnoreCanon?: () => void
   /** « film » ou « série » — le mot doit coller à ce que la soirée cherche. */
   noun?: string
 }
@@ -45,9 +50,25 @@ export function CompatibilityScreen({
   services = [],
   beyondServices = 0,
   onIgnoreServices,
+  canonOnly = false,
+  beyondCanon = 0,
+  onIgnoreCanon,
   noun = 'film',
 }: Props) {
   const count = result.pool.length
+
+  // Élargir, chiffré. Les deux portes de sortie sont les mêmes qu'il reste
+  // trois films ou aucun : c'est quand il n'en reste aucun qu'on en a le plus
+  // besoin, et c'était précisément là qu'elles manquaient.
+  const widen = (
+    <Widenings
+      noun={noun}
+      beyondCanon={canonOnly ? beyondCanon : 0}
+      onIgnoreCanon={onIgnoreCanon}
+      beyondServices={services.length ? beyondServices : 0}
+      onIgnoreServices={onIgnoreServices}
+    />
+  )
 
   if (count === 0) {
     return (
@@ -58,6 +79,7 @@ export function CompatibilityScreen({
         onAccept={onAcceptRelaxation}
         onRestart={onRestart}
         busy={busy}
+        widen={widen}
       />
     )
   }
@@ -72,6 +94,8 @@ export function CompatibilityScreen({
   const s_ = count > 1 ? 's' : ''
 
   const tags = [
+    // En tête : c'est le vivier, il cadre tout le reste.
+    ...(canonOnly ? ['🏆 La collection'] : []),
     ...cg.genres.slice(0, 2),
     ...cg.moods.slice(0, 2).map(moodLabel),
     ...(cg.maxRuntime ? [`Moins de ${formatRuntime(cg.maxRuntime)}`] : []),
@@ -140,21 +164,7 @@ export function CompatibilityScreen({
         {!limited && !narrowed && ' — vous n’avez encore rien écarté'}
       </motion.p>
 
-      {/* L'élargissement se décide en voyant ce qu'il rapporte, pas à
-          l'aveugle avant de chercher. Même mécanique que les compromis
-          chiffrés : on montre le coût, on ne l'impose pas. */}
-      {services.length > 0 && beyondServices > 0 && onIgnoreServices && (
-        <motion.button
-          type="button"
-          onClick={onIgnoreServices}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-3 text-[12.5px] text-gold underline-offset-4 hover:underline"
-        >
-          Chercher au-delà de vos abonnements : +{plural(beyondServices, noun)}
-        </motion.button>
-      )}
+      {widen}
 
       {canStart ? (
         <motion.button
@@ -201,6 +211,66 @@ export function CompatibilityScreen({
 
       {onRestart && <Restart onRestart={onRestart} />}
     </div>
+  )
+}
+
+/**
+ * Élargir le vivier, chiffré.
+ *
+ * Deux leviers qui n'appartiennent à personne en particulier — contrairement
+ * aux limites, qui sont celles de l'un ou de l'autre. Ils se décident donc
+ * sans demander l'accord de quiconque, mais jamais à l'aveugle : on annonce
+ * d'abord ce que chacun rapporte.
+ *
+ * La collection passe en premier : c'est de loin le plus gros verrou. Sur les
+ * 100, dix-sept seulement sont sur Netflix et deux durent moins d'1h30.
+ */
+function Widenings({
+  noun,
+  beyondCanon,
+  onIgnoreCanon,
+  beyondServices,
+  onIgnoreServices,
+}: {
+  noun: string
+  beyondCanon: number
+  onIgnoreCanon?: () => void
+  beyondServices: number
+  onIgnoreServices?: () => void
+}) {
+  const options = [
+    beyondCanon > 0 && onIgnoreCanon
+      ? { key: 'canon', label: `Élargir à tous les films : +${plural(beyondCanon, noun)}`, act: onIgnoreCanon }
+      : null,
+    beyondServices > 0 && onIgnoreServices
+      ? {
+          key: 'services',
+          label: `Chercher au-delà de vos abonnements : +${plural(beyondServices, noun)}`,
+          act: onIgnoreServices,
+        }
+      : null,
+  ].filter((o): o is { key: string; label: string; act: () => void } => o !== null)
+
+  if (!options.length) return null
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ delay: 0.5 }}
+      className="mt-3 flex flex-col items-center gap-1.5"
+    >
+      {options.map((o) => (
+        <button
+          key={o.key}
+          type="button"
+          onClick={o.act}
+          className="text-[12.5px] text-gold underline-offset-4 hover:underline"
+        >
+          {o.label}
+        </button>
+      ))}
+    </motion.div>
   )
 }
 
@@ -286,6 +356,7 @@ function NoMatch({
   onAccept,
   onRestart,
   busy,
+  widen,
 }: {
   result: MatchResult
   currentUserId: string
@@ -293,6 +364,8 @@ function NoMatch({
   onAccept: (r: Relaxation) => void
   onRestart?: () => void
   busy: boolean
+  /** Élargir le vivier — souvent la seule sortie quand rien ne passe. */
+  widen?: React.ReactNode
 }) {
   const options = result.relaxations
 
@@ -305,10 +378,15 @@ function NoMatch({
         </h1>
       </div>
 
+      {/* Élargir le vivier ne demande l'accord de personne : c'est la sortie
+          la plus immédiate, elle vient donc avant les limites de chacun. */}
+      <div className="mt-5 flex justify-center text-center">{widen}</div>
+
       {options.length === 0 ? (
         <p className="mt-5 text-center text-[14px] leading-relaxed text-muted text-balance">
           Vous avez exclu tous vos terrains communs. Il faut que l’un de vous
-          relâche une limite pour que Venn ait de quoi chercher.
+          relâche une limite, ou que vous élargissiez la recherche, pour que
+          Venn ait de quoi chercher.
         </p>
       ) : (
         <>

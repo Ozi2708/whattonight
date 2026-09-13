@@ -54,6 +54,18 @@ export const CANON = WORKS.filter((w) => w.canon)
 export const worksOfKind = (kind: Kind) => WORKS.filter((w) => w.kind === kind)
 
 /**
+ * Le vivier d'une soirée.
+ *
+ * `canonOnly` restreint à la collection : c'est le même geste que dans
+ * l'onglet Collection, où « Les 100 » est un scope à côté de « Tous les
+ * films ». La collection ne contient aucune série — un scope série et
+ * `canonOnly` ensemble rendraient donc une liste vide, et l'interface doit
+ * empêcher cette combinaison plutôt que la produire.
+ */
+export const poolOf = (kind: Kind, canonOnly = false) =>
+  WORKS.filter((w) => w.kind === kind && (!canonOnly || w.canon))
+
+/**
  * Œuvre française : la LANGUE d'origine, pas le pays de production.
  *
  * Cinquante-quatre films du catalogue portent la France dans leurs pays de

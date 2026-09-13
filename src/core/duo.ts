@@ -47,6 +47,13 @@ export interface Session {
   createdBy: string
   mode: SessionMode
   kind: SessionKind
+  /**
+   * Piocher dans la seule collection des 100, au lieu du réservoir complet.
+   * Sur la session pour la même raison que `kind` : les deux personnes
+   * doivent chercher dans le même vivier. N'a de sens que pour les films — la
+   * collection n'en contient aucune série.
+   */
+  canon: boolean
   status: 'collecting' | 'ready' | 'decided'
   submittedCount: number
   resultMovieId: string | null
@@ -153,6 +160,7 @@ const toSession = (row: Record<string, unknown>): Session => ({
   createdBy: row.created_by as string,
   mode: ((row.mode as string) ?? 'precise') as SessionMode,
   kind: ((row.kind as string) ?? 'movie') as SessionKind,
+  canon: Boolean(row.canon),
   status: row.status as Session['status'],
   submittedCount: (row.submitted_count as number) ?? 0,
   resultMovieId: (row.result_movie_id as string | null) ?? null,
@@ -162,43 +170,62 @@ const toSession = (row: Record<string, unknown>): Session => ({
 /**
  * Ouvre une soirée.
  *
- * La colonne `mode` arrive avec la migration V3. Tant qu'elle n'est pas
- * appliquée, on ne casse pas la V2 : une soirée « envie précise » repart sans
- * la colonne, à l'identique. En revanche « Choisis pour nous » ne peut pas être
- * servi silencieusement comme autre chose — on le dit.
+ * Chaque migration a ajouté une colonne : `mode` en V3, `kind` en V4,
+ * `canon` en V6. On tente la forme la plus complète, puis on redescend d'un
+ * cran à chaque colonne absente.
+ *
+ * Règle absolue de cette descente : on ne dégrade QUE vers la valeur par
+ * défaut. Une soirée « les séries » ne doit jamais repartir en film, ni une
+ * soirée « dans la collection » sur le réservoir entier — servir autre chose
+ * que ce qui a été demandé, sans le dire, est pire qu'une erreur claire.
  */
 export async function createSession(
   duoId: string,
   userId: string,
   mode: SessionMode = 'precise',
   kind: SessionKind = 'movie',
+  canon = false,
 ): Promise<Session> {
-  const { data, error } = await client()
-    .from('sessions')
-    .insert({ duo_id: duoId, created_by: userId, mode, kind })
-    .select()
-    .single()
+  const base = { duo_id: duoId, created_by: userId }
 
-  if (!error) return toSession(data)
+  /** Les formes successives, de la plus riche à la plus ancienne. */
+  const attempts: { row: Record<string, unknown>; missing: string | null }[] = [
+    { row: { ...base, mode, kind, canon }, missing: null },
+    {
+      row: { ...base, mode, kind },
+      // Sans `canon`, impossible de restreindre à la collection.
+      missing: canon
+        ? 'Piocher dans la collection demande la migration V6 : colle supabase/schema.v6.sql dans le SQL Editor de Supabase, puis Run.'
+        : null,
+    },
+    {
+      row: { ...base, mode },
+      missing:
+        kind === 'series'
+          ? 'Les séries demandent la migration V4 : colle supabase/schema.v4.sql dans le SQL Editor de Supabase, puis Run.'
+          : null,
+    },
+    {
+      row: base,
+      missing:
+        mode === 'quick'
+          ? 'Le mode « Choisis pour nous » demande la migration V3 : colle supabase/schema.v3.sql dans le SQL Editor de Supabase, puis Run.'
+          : null,
+    },
+  ]
 
-  const missingColumn = /column .* does not exist|schema cache/i.test(error.message)
-  if (!missingColumn) throw error
+  let last: unknown = null
+  for (const attempt of attempts) {
+    // Cette forme perdrait une information demandée : on s'arrête et on dit
+    // laquelle, plutôt que de servir une soirée qui n'est pas celle voulue.
+    if (attempt.missing) throw new Error(attempt.missing)
 
-  // Une colonne manquante ne doit jamais servir autre chose en silence : on
-  // ne retombe sur la V2 que si le choix demandé était déjà celui par défaut.
-  if (mode === 'quick' || kind === 'series') {
-    throw new Error(
-      `${kind === 'series' ? 'Les séries demandent' : 'Le mode « Choisis pour nous » demande'} la migration V4 : colle supabase/schema.v4.sql dans le SQL Editor de Supabase, puis Run.`,
-    )
+    const { data, error } = await client().from('sessions').insert(attempt.row).select().single()
+    if (!error) return toSession(data)
+    if (!/column .* does not exist|schema cache/i.test(error.message)) throw error
+    last = error
   }
-
-  const retry = await client()
-    .from('sessions')
-    .insert({ duo_id: duoId, created_by: userId })
-    .select()
-    .single()
-  if (retry.error) throw retry.error
-  return toSession(retry.data)
+  throw last
 }
 
 export async function latestSession(duoId: string): Promise<Session | null> {

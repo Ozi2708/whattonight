@@ -6,7 +6,7 @@ import { CompatibilityScreen } from './CompatibilityScreen'
 import { RouletteScreen } from './RouletteScreen'
 import { Poster } from './Poster'
 import { IconCheck } from './icons'
-import { WORKS_BY_ID, plural, worksOfKind, type Work } from '../movies/catalog'
+import { CANON, WORKS_BY_ID, plural, poolOf, type Work } from '../movies/catalog'
 import { explain, match, matchLabel, type MatchResult, type Participant, type Relaxation, type ScoredMovie, type Wishes } from '../movies/matching'
 import { buildDuoTaste, buildProfile, EMPTY_SIGNALS, type Affinity, type DuoTaste, type Signals, type TasteProfile } from '../movies/taste'
 import { QuickContext } from './QuickContext'
@@ -480,6 +480,10 @@ function DuoSession({
   // Élargir au-delà des abonnements : décidé sur l'écran de compatibilité, en
   // voyant ce que ça coûte, plutôt qu'à l'aveugle avant de chercher.
   const [ignoreServices, setIgnoreServices] = useState(false)
+  // Sortir de la collection : même mécanique, décidée en voyant le gain. La
+  // restriction aux 100 est de loin le plus gros verrou — les classiques sont
+  // rarement en abonnement, et deux seulement durent moins d'1h30.
+  const [ignoreCanon, setIgnoreCanon] = useState(false)
   const [result, setResult] = useState<Work | null>(null)
   const [tonight, setTonight] = useState<Work | null>(null)
 
@@ -488,6 +492,8 @@ function DuoSession({
   // L'hôte est celui qui a ouvert la session : lui seul lance la roulette,
   // sinon chacun tomberait sur un film différent.
   const isHost = session?.createdBy === profile.id
+  // Le vivier du soir : la collection, sauf si le duo a choisi de l'élargir.
+  const canonOnly = Boolean(session?.canon) && !ignoreCanon
   const host = duo.members.find((m) => m.userId === session?.createdBy)
 
   // Un tirage reçu fait basculer l'invité sur la roulette, où qu'il en soit.
@@ -504,6 +510,7 @@ function DuoSession({
     setResult(null)
     setTonight(null)
     setIgnoreServices(false)
+    setIgnoreCanon(false)
   }, [session?.id])
   const me = progress.find((p) => p.userId === profile.id)
   const ready = session?.status === 'ready' || session?.status === 'decided'
@@ -633,28 +640,37 @@ function DuoSession({
     // le même pool, et il change à chaque nouvelle soirée.
     // Et le pool est restreint à ce que la soirée cherche : on ne propose pas
     // une série à qui a ouvert une soirée film.
-    const all = worksOfKind(session?.kind ?? 'movie')
+    const all = poolOf(session?.kind ?? 'movie', canonOnly)
     const pool = ignoreServices ? all : coveredOnly(all, union)
     return match(pool, participants, session?.id ?? '')
-  }, [participants, session?.id, session?.kind, union, ignoreServices])
+  }, [participants, session?.id, session?.kind, canonOnly, union, ignoreServices])
 
-  /** Ce que l'élargissement rapporterait, chiffré avant de le proposer. */
+  /** Ce que chaque élargissement rapporterait, chiffré avant de le proposer. */
   const beyondServices = useMemo(() => {
     if (ignoreServices || !union.length || !session) return 0
-    const all = worksOfKind(session.kind)
+    const all = poolOf(session.kind, canonOnly)
     return all.length - coveredOnly(all, union).length
-  }, [union, ignoreServices, session])
+  }, [union, ignoreServices, session, canonOnly])
+
+  /** Sortir de la collection, à services inchangés — un gain à la fois. */
+  const beyondCanon = useMemo(() => {
+    if (!canonOnly || !session) return 0
+    const narrow = poolOf(session.kind, true)
+    const wide = poolOf(session.kind, false)
+    const keep = (list: Work[]) => (ignoreServices ? list : coveredOnly(list, union))
+    return keep(wide).length - keep(narrow).length
+  }, [canonOnly, session, union, ignoreServices])
 
   const names = useMemo(
     () => Object.fromEntries(duo.members.map((m) => [m.userId, m.displayName])),
     [duo.members],
   )
 
-  const start = async (mode: SessionMode, kind: SessionKind) => {
+  const start = async (mode: SessionMode, kind: SessionKind, canon: boolean) => {
     setBusy(true)
     setError(null)
     try {
-      await createSession(duo.id, profile.id, mode, kind)
+      await createSession(duo.id, profile.id, mode, kind, canon)
       setPhase('compat')
       setWishes(null)
       setResult(null)
@@ -822,6 +838,9 @@ function DuoSession({
         services={ignoreServices ? [] : union}
         beyondServices={beyondServices}
         onIgnoreServices={() => setIgnoreServices(true)}
+        canonOnly={canonOnly}
+        beyondCanon={beyondCanon}
+        onIgnoreCanon={() => setIgnoreCanon(true)}
         noun={session.kind === 'series' ? 'série' : 'film'}
       />
     )
@@ -921,6 +940,20 @@ function Reasons({
 
 /* ----------------------------------------------------------- espace duo */
 
+/**
+ * Les trois viviers d'une soirée duo, dans le vocabulaire de l'onglet
+ * Collection — « Les 100 » y est déjà un scope à côté de « Tous les films ».
+ * Aucune série n'appartient à la collection, donc les trois sont disjoints et
+ * un seul choix les couvre tous.
+ */
+type Scope = 'canon' | 'films' | 'series'
+
+const SCOPES: { id: Scope; emoji: string; label: string; kind: SessionKind; canon: boolean }[] = [
+  { id: 'canon', emoji: '🏆', label: `Les ${CANON.length}`, kind: 'movie', canon: true },
+  { id: 'films', emoji: '🎬', label: 'Tous les films', kind: 'movie', canon: false },
+  { id: 'series', emoji: '📺', label: 'Séries', kind: 'series', canon: false },
+]
+
 function DuoHome({
   duo,
   meId,
@@ -939,7 +972,7 @@ function DuoHome({
   duo: Duo
   meId: string
   lastMovieId: string | null
-  onStart: (mode: SessionMode, kind: SessionKind) => void
+  onStart: (mode: SessionMode, kind: SessionKind, canon: boolean) => void
   busy: boolean
   error: string | null
   duoTaste: DuoTaste | null
@@ -955,7 +988,13 @@ function DuoHome({
   const ordered = [...duo.members].sort((a) => (a.userId === meId ? -1 : 1))
   // Ce qu'on regarde vient AVANT comment on choisit : c'est la question la
   // plus structurante, et elle change complètement le pool.
-  const [kind, setKind] = useState<SessionKind>('movie')
+  //
+  // Les trois viviers sont les mêmes que dans l'onglet Collection, avec les
+  // mêmes mots : on ne réapprend pas un vocabulaire d'un écran à l'autre. Ils
+  // s'excluent par construction — la collection ne contient aucune série —,
+  // donc un seul choix suffit et la combinaison impossible n'existe pas.
+  const [scope, setScope] = useState<Scope>('films')
+  const { kind, canon } = SCOPES.find((sc) => sc.id === scope)!
 
   return (
     <div className="ambient flex flex-1 flex-col justify-center px-6 py-10 text-center">
@@ -986,28 +1025,47 @@ function DuoHome({
         </div>
       )}
 
-      {/* Deux portes vers le même moteur : elles ne diffèrent que par la
-          quantité d'informations qu'on accepte de donner. */}
-      <div className="mx-auto mt-8 flex w-full max-w-sm gap-2">
-        {(['movie', 'series'] as const).map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setKind(k)}
-            aria-pressed={kind === k}
-            className={`flex-1 rounded-2xl border py-2.5 text-[13.5px] font-semibold transition-colors ${
-              kind === k ? 'border-gold bg-gold/15 text-gold' : 'border-line bg-surface/70 text-cream/70'
-            }`}
-          >
-            {k === 'movie' ? '🎬 Un film' : '📺 Une série'}
-          </button>
-        ))}
+      {/* Dans quoi on pioche. Le choix est commun aux deux portes ci-dessous :
+          il décrit le vivier, pas la façon de le fouiller. */}
+      <div className="mx-auto mt-8 grid w-full max-w-sm grid-cols-3 gap-2">
+        {SCOPES.map((sc) => {
+          const on = scope === sc.id
+          return (
+            <button
+              key={sc.id}
+              type="button"
+              onClick={() => setScope(sc.id)}
+              aria-pressed={on}
+              className={`flex flex-col items-center gap-1 rounded-2xl border px-1 py-3 transition-colors ${
+                on ? 'border-gold bg-gold/15' : 'border-line bg-surface/70'
+              }`}
+            >
+              <span className="text-[20px]" aria-hidden>
+                {sc.emoji}
+              </span>
+              <span
+                className={`text-[12.5px] leading-tight font-semibold ${on ? 'text-gold' : 'text-cream/70'}`}
+              >
+                {sc.label}
+              </span>
+            </button>
+          )
+        })}
       </div>
+
+      {/* La collection est petite et ancienne : dire tout de suite que le
+          choix sera plus serré évite de le découvrir comme une panne. */}
+      {canon && (
+        <p className="mx-auto mt-2.5 max-w-sm text-[12px] leading-relaxed text-muted">
+          On avance dans la collection. Beaucoup de ces classiques ne sont sur
+          aucun abonnement — Venn proposera d’élargir si le choix se fait rare.
+        </p>
+      )}
 
       <div className="mx-auto mt-3 w-full max-w-sm space-y-3">
         <button
           type="button"
-          onClick={() => onStart('quick', kind)}
+          onClick={() => onStart('quick', kind, canon)}
           disabled={busy}
           className="w-full rounded-[22px] bg-gold px-5 py-[17px] text-left text-ink shadow-[0_10px_40px_-10px_var(--color-gold)] transition-transform active:scale-[0.98] disabled:opacity-50"
         >
@@ -1019,7 +1077,7 @@ function DuoHome({
 
         <button
           type="button"
-          onClick={() => onStart('precise', kind)}
+          onClick={() => onStart('precise', kind, canon)}
           disabled={busy}
           className="w-full rounded-[22px] border border-line bg-surface/70 px-5 py-[17px] text-left transition-transform active:scale-[0.98] disabled:opacity-50"
         >
